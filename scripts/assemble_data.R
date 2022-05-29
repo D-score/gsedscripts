@@ -1,7 +1,39 @@
-# Assemble relevant GSED validation data
-# May/June 2022 SvB
+# This script reads all SF, LF and BSID data from source and combines
+# these into one dataset. Items conform to the gsed2 naming schema, which
+# defines new 9-position names for SF and LF. Each row in the resulting
+# dataset is a unique combination of four factors:
+#   gsed_id - the child
+#   age - age in days
+#   ins - instrument (lf, sf, bsid)
+#   worker_code - code of data collector
+#
+# Dependencies
+#
+# Assumed installed packages: remotes, dplyr, tidyr, tibble
+# Assumed environmental variable: ONEDRIVE_GSED
+#
+# TODO:
+# 1. Develop more subtle duplicate removal
+# 2. Repair missing parent_id, worker_code, date, and so on
+# 3. Check whether assumed vist_type is OK
+# 4. Use tidyverse grammar more consistently
+# 5. Expand to other input data (anthro, and so on)
+# 6. Include Rapid Short Form data
+# 7. Replace cat() by nicer testing statements, including a silencer
+# 8. When everything is polished, turn into function
+# None of these issues is critical for modeling, so let's use this as
+# base data.
+#
+# May 29, 2022 SvB
 
+# If needed, install gsedread from GitHub
+pkg <- "gsedread"
+if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
+    answer <- askYesNo(paste("Package", pkg, "needed. Install from GitHub?"))
+    if (answer) remotes::install_github("d-score/gsedread")
+}
 if (packageVersion("gsedread") < "0.7.1") stop("Needs gsedread 0.7.1")
+
 library(gsedread)
 library(dplyr)
 library(tidyr)
@@ -101,10 +133,24 @@ bsid <- bsid %>%
     vist_type = 1L
   )
 
+# bind LF, SF and BSID, add number of responses per instrument
+work <- bind_rows(sf, lf, bsid) %>%
+  arrange(gsed_id, age, ins, worker_code) %>%
+  mutate(n_sf = rowSums(!is.na(across(starts_with("gpa")))),
+         n_lf = rowSums(!is.na(across(starts_with("gto")))),
+         n_bsid = rowSums(!is.na(across(starts_with("by3"))))) %>%
+  select(gsed_id, age, ins, worker_code, adm, vist_type, n_sf:n_bsid,
+         file:caregiver, age_adj_premature, ah01:m03,
+         gpalac001:by3gmd072)
 
-# bind LF, SF and BSID
-data <- bind_rows(sf, lf, bsid) %>%
-  arrange(gsed_id, age, vist_type)
+# check whether combination gsed_id, age, ins, worker_code is unique
+uni <- work %>%
+  group_by(gsed_id, age, ins, worker_code) %>%
+  summarise(n_gp = dplyr::n(), .groups = "drop") %>%
+  filter(n_gp == 1L)
+cat("Number of rows in work    ", nrow(work), "\n")
+cat("Number of unique records  ", nrow(uni), "\n")
 
-dim(data)
-with(data, table(ins, adm))
+# clean up
+rm(list = setdiff(ls(), "work"))
+cat("The combined data are in object `work`.\n")
