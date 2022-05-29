@@ -9,3 +9,7 @@ Description: Holdout for scripts and custom functions needed for the
 License: GPL
 Encoding: UTF-8
 LazyData: true
+Imports: 
+    remotes,
+    utils
+RoxygenNote: 7.1.2
