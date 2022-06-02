@@ -1,4 +1,4 @@
-# This script plots the proportion pass by age for all items of the GSED SF.
+# This script plots the proportion pass by age for all items of BSID.
 #
 # Dependencies
 # Assumed environmental variable: ONEDRIVE_GSED

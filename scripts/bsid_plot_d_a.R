@@ -1,5 +1,5 @@
-# This script plots the proportion pass by age for all items of the GSED SF.
-#
+# This script plots the D-score (BSID only) by study
+
 # Dependencies
 # Assumed environmental variable: ONEDRIVE_GSED
 # Non-standard packages: dmetric (private)

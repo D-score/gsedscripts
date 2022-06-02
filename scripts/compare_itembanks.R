@@ -1,16 +1,16 @@
-# Compare itembank of gsed and gsed22
+# Compare itembanks of gsed1912, gsed2206, sf2206, lf2206
 # This script assumes that models 818_17_joint_fixed, 155_0 and 139_0 have
 # been fitted.
 # Compares the difficulty estimates produced by the various models.
 # Conclusions:
-# - The gsed22 key (update) and existing gsed key correlate 0.997, and are
+# - The gsed2206 key (update) and gsed key gsed1912 correlate 0.997, and are
 # well placed along the diagonal. Still, some separate taus may differ up to
 # 8 D-score points.
-# - Agreement between the isolated gsed_lf key and gsed22 is higher than
-# agreement between isolated gsed_lf and existing gsed. Both forms of
+# - Agreement between the isolated lf2206 key and gsed2206 is higher than
+# agreement between isolated lf2206 and gsed1912. Both forms of
 # disagreement is non-linear in tau.
-# - Agreement between isolated gsed_sf key and gsed22 is excellent above tau 40,
-# but systematically biased below that. Agreement with gsed22 is better than with gsed.
+# - Agreement between isolated sf2206 key and gsed2206 is excellent above tau 40,
+# but systematically biased below that. Agreement with gsed2206 is better than with gsed1912.
 #
 # 20220601 SvB
 
