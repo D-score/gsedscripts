@@ -1,0 +1,99 @@
+---
+title: "Key update for GSED Phase 1 validation data"
+author: "Stef van Buuren"
+date: 20220602
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Role of the key
+
+The Rasch model is a mathematical model that describes the success probability of every item as a function of the child's development. Fitting the Rasch model produces estimates of item difficulties (tau's), which play a crucial role in calculating the D-score. We use the term *key* to refer to a given collection of items and their difficulty estimate. Two D-scores calculated from the same key are comparable, even if both sets of administered items differ.
+
+## Key updating strategies
+
+Suppose we have an existing key and that data arrive with novel children and novel items not present in the key. We have several options to handle this situation. In increasing order of complexity, these are:
+
+1. *Ignore*: Ignore any items not in the key and calculate the D-score using the subset of items present in the key. This procedure is the conventional way of calculating the D-score.
+2. *Extend*: Extend the current key with the new items, fixing existing difficulty estimates. This option helps add new instruments to an existing key, preserving comparability with existing D-scores. There is no attempt to rectify problems with the current key in light of the new data.
+3. *Isolate*: Create a new key per instrument using the new data only, not historical data. This option is convenient for creating and optimising a new instrument. It does not connect the instrument to previous work, so the items are not embedded in a larger model.
+4. *Update*: Update the existing key using all data, but keep the parts for which there are no new data constant. This option replaces the existing key with a better key to support comparability across multiple instruments and aims to preserve historic comparability as far as possible.
+5. *Remodel*: Start from scratch using all data. This option is needed to solve persistent, significant issues that cannot be handled by options 2-4. A complete break with historical comparability.
+
+We executed options *isolate* and *update*. We use *isolate* here to infer the instrument's " natural behaviour " and investigate how the instrument differs from the larger D-score model. We use *update* to estimate tau's for new items and incorporate the most recent data into current estimates of the present key.
+
+## Isolated keys for LF and SF
+
+We fitted separate Rasch models for the LF (scored by trained observers) and SF (scored by parents). For the LF, we found that 125 out of 155 items had both infit and outfit below the cut-off value of 1.2, leaving 30 items for evaluation. Likewise, for the SF, we found 121 out of 139 items were below the cut-off value of 1.2, leaving 18 items for closer inspection by subject-matter experts. In this phase, we did not attempt item selection.
+
+The transformation to a provisional D-score scale requires a linear transformation from the logit to the D-score scale. Historically, this transformation is defined by setting the difficulty of two items to 20 and 40, respectively. The LF contains these two items, but the resulting transformation provided implausible results because the new difficulty estimates appear much closer than the current key. As the SF does not have the standard anchor items, we need to find another way to define the transform. We have used a regression of the newly derived tau's given the published taus for selected items. There are multiple approaches to this problem, and it is not yet clear which one is to be preferred. Our advice is to use the keys for isolated instruments only for improving internal consistency and not those keys to calculate D-scores.
+
+The SF and LF were often administered on the same day or one day apart. We plotted the pair of resulting person scores (in logits) in a Tukey Sum-Difference graph (Bland-Altman plot) to study their agreement. We found that at some ranges of the scale, the results were apart by more than 2-4 logits (which is substantial), suggesting that parents and trained observers use the scale differently (parents underestimate development at younger ages and overestimate at higher ages). The identified discrepancies substantially weaken, though still visible, after a straightforward linear transform of the logits. More research is needed to explain the observed inter-instrument differences.
+
+## Updated key: *gsed2206*
+
+The analysis involved refitting the 807_17 model on a more extensive data set. The dataset consists of 
+
+1. The historical data in the 807_17 model;
+2. All items from the SF and LF, for both fixed and adaptive administrations;
+3. All items from BSID that were already present in the 807_17 model.
+
+Items were coded using the existing item naming schema. We extended the schema by 11 new items, leading up to 818 items. We did not alter the equate group structure and used the same analytic options. Adding the Phase 1 BGD, PAK, and TZA data increased the number of child/age/instrument combinations from 56k to 71k. Item fit was excellent, though a handful of items displayed a large outfit, indicative of fitting issues at the extremes. We fitted one round of models and did not attempt item selection.
+
+The equating items for the added cohorts behaved similarly to the historical data. We calculated a D-score per instrument (SF, LS, BSID). The D-score by age distributions for BGD, PAK and TZA cohort look convincing, and they follow the ad-hoc (gcdg, blue) references quite well. There was more agreement between the newly calculated *gsed2206* key and the isolated instrument key (SF, LF) than the existing gsed key (called now *gsed1912*) and the isolated keys. 
+
+There are still problems that need to be resolved for tau < 30 (for SF) and the nonlinear nature of tau (for LF). Overall, we conclude that the new *gsed2206* key improves upon *gsed1912*.
+
+## Advice for calculating D-score
+
+The SF and LF are constructed from the best set of items across 20 instruments. The new data on SF and LF thus provide vital information that links items from different instruments beyond what is achieved by explicit item equating. Therefore, the updated key is more stable and more robust against errors in the choice of equate groups. We also found that the item difficulties of the isolated SF and LF keys are more similar to *gsed2206* than to *gsed1912*.
+
+For calculating D-score, the advice is to replace the *gsed1912* key with *gsed2206*. The advice will likely change once the Phase 2 data becomes available.
+
+The `dscore 1.5.0` package supports the following keys:
+
+Key name   | Model name      | Description
+-----------|-----------------|----------------------------------
+`gsed1912` | `807_17`        | Default gsed key until 1.5.0 
+`gsed2206` | `818_17`        | Default gsed key from 1.5.0 
+`lf2206`   | `155_0`         | Isolated key for all LF items
+`sf2206`   | `139_0`         | Isolated key for all SF items
+
+The "old" key *gsed* is renamed `gsed1912` to enable reproducibility. The default key in a call to `dscore::dscore()` is `key = "gsed"`. Version 1.5.0 links the default to key *gsed2206* rather than *gsed1912*. Item names remain the same, except for an addition of a few new `gsd` items from the SF. Specify `key = "lf2206"` or `key = "sf2206"` to invoke those keys. The user can choose the mapped item names or the new item names `gto` and `gpa` for LF and SF, respectively. The `gsedread::rename_vector()` supports switching between item names.
+
+The version is not yet available on CRAN at the time of writing and must be installed from GitHub. 
+
+## Overview of materials
+
+#### Scripts
+
+R script     | Description
+-------------|-----------------------
+[assemble_data](https://github.com/D-score/gsedscripts/blob/main/scripts/assemble_data.R) | Reads and combines all SF, LF and BSID
+[lf_plot_p_a](https://github.com/D-score/gsedscripts/blob/main/scripts/lf_plot_p_a.R) | Plot proportion pass by age for LF items
+[lf_155_0](https://github.com/D-score/gsedscripts/blob/main/scripts/lf_155_0.R) | Fits Rasch model to all items of the GSED LF
+[sf_plot_p_a](https://github.com/D-score/gsedscripts/blob/main/scripts/sf_plot_p_a.R) | Plot proportion pass by age for LF items
+[sf_139_0](https://github.com/D-score/gsedscripts/blob/main/scripts/sf_139_0.R) | Fits Rasch model to all items of the GSED SF
+[calibrate_sf_lf](https://github.com/D-score/gsedscripts/blob/main/scripts/calibrate_sf_lf.R) | Tukey Sum-Difference plot for SF and LF
+[bsid_plot_p_a](https://github.com/D-score/gsedscripts/blob/main/scripts/bsid_plot_p_a.R) | Plot proportion pass by age for BSID items
+[bsid_plot_d_a](https://github.com/D-score/gsedscripts/blob/main/scripts/bsid_plot_d_a.R) | Plots the D-score (BSID only) by study
+[bsid_326_0](https://github.com/D-score/gsedscripts/blob/main/scripts/bsid_326_0.R) | Fits Rasch model to all items of the GSED BSID (fails)
+[807_17_revisit4](https://github.com/D-score/gsedscripts/blob/main/scripts/807_17_revisit4.R)| Recreate model 807_17
+[818_17_joint_fixed](https://github.com/D-score/gsedscripts/blob/main/scripts/818_17_joint_fixed.R) | Fits Rasch model on 807_17 data with the new SF/LF/BSID data
+[818_17_joint_free](https://github.com/D-score/gsedscripts/blob/main/scripts/818_17_joint_free.R) | As 818_17, but removing parameter restrictions (fails)
+[compare_itembanks](https://github.com/D-score/gsedscripts/blob/main/scripts/compare_itembanks.R) | Various comparison between item banks
+
+#### Results
+
+In dropbox [phase1](https://www.dropbox.com/sh/w9m86ue19tvxkva/AABW1LsmWG1jWpqWwfqRWrOqa?dl=0)
+
+Location     | Description
+-------------|---------------------------------
+bsid         | BSID plots (not so interesting)
+joint        | Results from models 818_17
+lf           | Results for LF analyses
+sf           | Results for SF analyses
+tukey        | Tukey SD plot comparing lf and sf person scores (logits)
