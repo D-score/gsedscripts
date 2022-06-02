@@ -47,14 +47,15 @@ data <- work %>%
 #
 
 # Fit the Rasch model
+model_name <- paste(length(items), "0", sep = "_")
 model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     data = data,
-                    name = paste(length(items), "0", sep = "_"),
+                    name = model_name,
                     transform = c(53.98, 3),
                     data_package = "")
 
 # Store and reload model
-path <- file.path("~/project/gsed/phase1/sf", model$name)
+path <- file.path("~/project/gsed/phase1/sf", model_name)
 dir.create(path, showWarnings = FALSE)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 model <- readRDS(file.path(path, "model.Rds"))
@@ -81,3 +82,6 @@ r <- plot_dmodel(data = data,
 # plot(y = beta_gsed, x = beta_l, col = "orange", pch = 20)
 # abline(cal, col = "red")
 # transform <- coef(cal)
+
+# statistics
+with(model$item_fit, table(outfit<1.2 & infit<1.2))
