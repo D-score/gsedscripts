@@ -43,6 +43,7 @@ data <- work %>%
 
 col_manual = c("BGD" = "#D93F46", "PAK" = "#489033", "TZA" = "#47A1D8")
 
+# NOTE: Potentially vary key = "gsed" to explicit "gsed1912" or "gsed2206"
 ds <- dscore::dscore(data = data, items = items,
                      xname = "agedays", xunit = "days", key = "gsed")
 ds <- bind_cols(data[, adm], ds)
