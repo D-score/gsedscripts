@@ -3,6 +3,7 @@
 
 # get the phase 1 validation data
 suppressWarnings(source("scripts/assemble_data.R"))
+source("scripts/edit_data.R")
 
 library(gseddata)
 library(dmetric)
@@ -11,7 +12,8 @@ library(ggplot2)
 
 stopifnot(packageVersion("dscore") >= "1.5.4")
 
-key <- "294_0"   # experimental key for LF and SF
+key <- "293_0_anchor"   # experimental key for LF and SF
+# key <- "294_0"   # experimental key for LF and SF
 # key <- "gsed2206"
 # key <- "gsed1912"
 # key <- "lf2206"
@@ -50,18 +52,26 @@ data <- work %>%
   select(all_of(adm), all_of(items))
 
 # # We do not need custom itembank anymore since dscore 1.5.4, but just keep these statement to go back if needed
-# path <- file.path("~/project/gsed/phase1/lfsfbsid", "294_0")
-# model <- readRDS(file.path(path, "model.Rds"))
-# itembank <- data.frame(key = "custom", model$itembank)
+path <- file.path("~/project/gsed/phase1/lfsfbsid", key)
+model <- readRDS(file.path(path, "model.Rds"))
+itembank <- data.frame(key = "custom", model$itembank)
 # # Use as key = "custom" and itembank = itembank in dscore(...)
 
+# ds <- dscore(data = data,
+#              items = items,
+#              key = key,
+#              xname = "agedays",
+#              xunit = "days",
+#              population = "gcdg",
+#              relevance = c(-Inf, 5))
 ds <- dscore(data = data,
              items = items,
-             key = key,
+             key = "custom",
+             itembank = itembank,
              xname = "agedays",
              xunit = "days",
              population = "gcdg",
-             relevance = c(-Inf, +5))
+             relevance = c(-Inf, Inf))
 md <- cbind(data, ds)
 
 r <- builtin_references %>%
@@ -91,7 +101,7 @@ g <- ggplot(md, aes(x = a, y = d, group = subjid, colour = country)) +
 g
 
 ggsave(
-  file = paste0("dscore_by_age_", key, "_5.pdf"),
+  file = paste0("dscore_by_age_", key, ".pdf"),
   plot = g,
   device = "pdf",
   width = 16,
