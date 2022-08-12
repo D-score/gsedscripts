@@ -12,11 +12,12 @@
 # Assumed environmental variable: ONEDRIVE_GSED
 # Non-standard packages: dmetric (private)
 # Inline R scripts: assemble_data.R
+#                   edit_data.R
 #
 # The objective is to estimate difficulty parameters under the assumption
 # that the D-score of a child should be the same for both LF and SF.
 #
-# Aug 3, 2022, 2022 SvB
+# Aug 7, 2022, 2022 SvB
 #
 # R package fuzzyjoin
 library(dplyr)
@@ -34,6 +35,7 @@ library("dmetric")
 
 # get all data
 suppressWarnings(source("scripts/assemble_data.R"))
+source("scripts/edit_data.R")
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "study", "subjid", "joinid", "agedays", "ins")
@@ -97,7 +99,7 @@ model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     relevance = c(-20, 5))
 
 # Store and reload model
-path <- file.path("~/project/gsed/phase1/lfsfbsid", model_name)
+path <- file.path("~/project/gsed/phase1/remodel", model_name)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
 model <- readRDS(file.path(path, "model.Rds"))

@@ -1,9 +1,9 @@
-# This script fits the Rasch model to all items of the LF, SF and BSID collected
+# This script fits the Rasch model to all items of the LF and SF collected
 # in Phase 1 Validation, fixed data only.
 #
 # The script
-# 1. select LF, SF and BSID items
-# 2. fuzzy joins the LF, SF and BSID administration to one record
+# 1. select LF and SF items
+# 2. fuzzy joins the LF and SF administration to one record
 # 3. fits Rasch model
 # 4. produces the diagnostic plots
 # 5. compares D-score by age and tau-estimates to gsed2206
@@ -37,7 +37,7 @@ suppressWarnings(source("scripts/assemble_data.R"))
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "study", "subjid", "joinid", "agedays", "ins")
-items <- colnames(work)[starts_with(c("gpa", "gto", "by3"), vars = colnames(work))]
+items <- colnames(work)[starts_with(c("gpa", "gto"), vars = colnames(work))]
 long <- work %>%
   filter(adm == "fixed") %>%
   mutate(
@@ -62,10 +62,7 @@ sf <- long %>%
 lf <- long %>%
   filter(ins == "lf") %>%
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
-bsid <- long %>%
-  filter(ins == "bsid") %>%
-  select(all_of(adm), items[all_of(starts_with("by3", vars = items))])
-joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
+data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
                                          max_dist = 4, distance_col = "dist") %>%
   mutate(
     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
@@ -77,19 +74,6 @@ joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
     ins = ifelse(is.na(ins.x), ins.y, ins.x),
   ) %>%
   select(all_of(adm), any_of(items))
-data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"),
-                                         max_dist = 4, distance_col = "dist") %>%
-  mutate(
-    cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
-    cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
-    study = ifelse(is.na(study.x), study.y, study.x),
-    subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
-    joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
-    agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
-    ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) %>%
-  select(all_of(adm), any_of(items))
-# Result: 6838 records, 627 columns
 
 # Remove items with fewer than 2 categories or fewer than 10 scores in either category
 min_cat <- 10
@@ -108,11 +92,11 @@ model_name <- paste(length(items), "0", sep = "_")
 model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     data = data,
                     name = model_name,
-                    transform = c(55, 4),
+                    transform = c(55.46, 4.07),
                     data_package = "")
 
 # Store and reload model
-path <- file.path("~/project/gsed/phase1/lfsfbsid", model_name)
+path <- file.path("~/project/gsed/phase1/remodel", model_name)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 model <- readRDS(file.path(path, "model.Rds"))
 
@@ -128,6 +112,17 @@ r <- plot_dmodel(data = data,
                  xlim = c(0, 85),
                  xbreaks = seq(0, 80, 10))
 
+# # Alternative anchoring: Obtain regression coefficients relative to gsed key for DDI
+# items_gsed <- gsedread::rename_vector(items, lexin = "gsed2", lexout = "gsed")
+# ddi <- grep("ddi", items_gsed)
+# beta_gsed <- dscore::get_tau(items_gsed[ddi], key = "gsed", itembank = dscore::builtin_itembank)
+# beta_l <- get_diff(model$fit)[ddi]
+# cal <- lm(beta_gsed ~ beta_l)
+# # plot(y = beta_gsed, x = beta_l, col = "orange", pch = 20)
+# # abline(cal, col = "red")
+# transform <- coef(cal)
+
 # statistics
 with(model$item_fit, table(outfit<1.2 & infit<1.2))
+
 

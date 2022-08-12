@@ -7,12 +7,12 @@ source("scripts/edit_data.R")
 
 library(gseddata)
 library(dmetric)
-library(dscore)  # !!! Use 1.5.4 with relevance argument and key 294_0
+library(dscore)
 library(ggplot2)
 
 stopifnot(packageVersion("dscore") >= "1.5.4")
 
-key <- "293_0_anchor"   # experimental key for LF and SF
+key <- "293_0"   # experimental key for LF and SF
 # key <- "294_0"   # experimental key for LF and SF
 # key <- "gsed2206"
 # key <- "gsed1912"
@@ -41,7 +41,7 @@ items <- items[!dup2]
 data <- work %>%
   mutate(
     subjido = gsed_id,
-    agedays = age + (ins == "lf") * 0.1 + (ins == "bsid") * 0.2,
+    agedays = age,
     cohort = strtrim(subjido, 7),
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     country = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
@@ -52,30 +52,27 @@ data <- work %>%
   select(all_of(adm), all_of(items))
 
 # # We do not need custom itembank anymore since dscore 1.5.4, but just keep these statement to go back if needed
-path <- file.path("~/project/gsed/phase1/lfsfbsid", key)
+path <- file.path("~/project/gsed/phase1/remodel", key)
 model <- readRDS(file.path(path, "model.Rds"))
-itembank <- data.frame(key = "custom", model$itembank)
-# # Use as key = "custom" and itembank = itembank in dscore(...)
-
+# itembank <- data.frame(key = "custom", model$itembank)
+# # # Use as key = "custom" and itembank = itembank in dscore(...)
 # ds <- dscore(data = data,
 #              items = items,
-#              key = key,
+#              key = "custom",
+#              itembank = itembank,
 #              xname = "agedays",
 #              xunit = "days",
-#              population = "gcdg",
-#              relevance = c(-Inf, 5))
+#              population = "phase1")
+
 ds <- dscore(data = data,
              items = items,
-             key = "custom",
-             itembank = itembank,
+             key = "gsed",
              xname = "agedays",
-             xunit = "days",
-             population = "gcdg",
-             relevance = c(-Inf, Inf))
+             xunit = "days")
 md <- cbind(data, ds)
 
 r <- builtin_references %>%
-  filter(pop == "gcdg") %>%
+  filter(pop == "phase1" & age < 3.5) %>%
   select(age, SDM2, SD0, SDP2)
 
 col_manual = c("GSED-BGD" = "#D93F46", "GSED-PAK" = "#489033", "GSED-TZA" = "#47A1D8")
@@ -87,10 +84,10 @@ g <- ggplot(md, aes(x = a, y = d, group = subjid, colour = country)) +
   theme(legend.key = element_blank()) +
   scale_colour_manual(values = col_manual) +
   annotate("polygon", x = c(r$age, rev(r$age)),
-           y = c(r$SDM2, rev(r$SDP2)), alpha = 0.1, fill = "lightblue") +
-  annotate("line", x = r$age, y = r$SDM2, lwd = 0.3, alpha = 0.2, color = "blue") +
-  annotate("line", x = r$age, y = r$SDP2, lwd = 0.3, alpha = 0.2, color = "blue") +
-  annotate("line", x = r$age, y = r$SD0, lwd = 0.5, alpha = 0.2, color = "blue") +
+           y = c(r$SDM2, rev(r$SDP2)), alpha = 0.0, fill = "transparent") +
+  annotate("line", x = r$age, y = r$SDM2, lwd = 0.7, color = "#C5EDDE") +
+  annotate("line", x = r$age, y = r$SDP2, lwd = 0.7, color = "#C5EDDE") +
+  annotate("line", x = r$age, y = r$SD0, lwd = 1.3, color = "#C5EDDE") +
   coord_cartesian(xlim = c(0, 3.5)) +
   ylab(expression(paste(italic(D), "-score", sep = ""))) +
   xlab("Age (in years)") +

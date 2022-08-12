@@ -1,16 +1,16 @@
-# Calibrate scales of SF and LF for model 293_0
+# Calibrate scales of SF and LF for model 294_0
 # This script creates a Tukey Sum-Difference plot (Bland Altman plot)
 # for D-score calcuate for SF and LF
 #
-# Prerequisites: Run sf_lf_293_0.R
+# Prerequisites: Run sf_lf_294_0.R
 # R package fuzzyjoin
 library(dplyr)
-library(dscore)
 library(ggplot2)
+library(dscore)
 
 # Get the joined data
-model_name <- "293_0_anchor"
-path <- file.path("~/project/gsed/phase1/lfsfbsid", model_name)
+model_name <- "294_0"
+path <- file.path("~/project/gsed/phase1/remodel", model_name)
 data <- readRDS(file.path(path, "data.Rds"))
 model <- readRDS(file.path(path, "model.Rds"))
 
@@ -29,7 +29,7 @@ d_lf <- dscore(data = data,
                xname = "agedays",
                xunit = "days",
                population = "gcdg",
-               relevance = c(-Inf, Inf)) %>%
+               relevance = c(-20, 5)) %>%
   rename(d_lf = d, daz_lf = daz) %>%
   select(all_of(c("a", "d_lf", "daz_lf")))
 
@@ -41,7 +41,7 @@ d_sf <- dscore(data = data,
                xname = "agedays",
                xunit = "days",
                population = "gcdg",
-               relevance = c(-Inf, Inf)) %>%
+               relevance = c(-20, 5)) %>%
   rename(d_sf = d, daz_sf = daz) %>%
   select(all_of(c("d_sf", "daz_sf")))
 
@@ -151,14 +151,14 @@ dec <- decompose_itemnames(model$item_fit$item)
 dec$ins <- ifelse(dec$instrument == "gpa", "SF", "LF")
 itemfit <- bind_cols(model$item_fit, dec)
 plot7 <- ggplot(itemfit, aes(x = ins, y = infit, colour = domain)) +
-  scale_y_continuous("Infit", limits = c(0, 4)) +
+  scale_y_continuous("Infit", limits = c(0, 3)) +
   scale_x_discrete("Instrument") +
   geom_hline(yintercept = 1, colour = "grey", size = 1) +
   geom_boxplot()
 plot7
 
 plot8 <- ggplot(itemfit, aes(x = ins, y = outfit, colour = domain)) +
-  scale_y_continuous("Outfit", limits = c(0, 4)) +
+  scale_y_continuous("Outfit", limits = c(0, 7)) +
   scale_x_discrete("Instrument") +
   geom_hline(yintercept = 1, colour = "grey", size = 1) +
   geom_boxplot()
@@ -171,7 +171,7 @@ plots <- list(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8)
 path <- file.path("~/project/gsed/phase1")
 device <- "pdf"
 if (!is.null(file) & device == "pdf") {
-  file <- file.path(path, "calibration_plot_293_0_anchor.pdf")
+  file <- file.path(path, "calibration_plot_294_0.pdf")
   pdf(file, onefile = TRUE, width = 24, height = 8)
   lapply(plots, print)
   message("Saved to: ", file)
@@ -180,18 +180,22 @@ if (!is.null(file) & device == "pdf") {
 
 # compare difficulty estimates with key gsed2206
 tau_gsed2206 <- get_tau(items = c(items_lf, items_sf), key = "gsed2206")
-tau_294_0 <- get_tau(items = c(items_lf, items_sf), key = "294_0")
-tau_293_0 <- get_tau(items = c(items_lf, items_sf), key = "293_0",
-                     itembank = cbind(key = "293_0", model$itembank))
+tau_294_0 <- get_tau(items = c(items_lf, items_sf), key = "294_0",
+                     itembank = cbind(key = "294_0", model$itembank))
 df <- data.frame(item = c(items_lf, items_sf),
                  instrument = c(rep("LF", length(items_lf)), rep("SF", length(items_sf))),
                  tau_gsed2206 = tau_gsed2206,
-                 tau_294_0 = tau_294_0,
-                 tau_293_0 = tau_293_0)
+                 tau_294_0 = tau_294_0)
+g <- ggplot(df, aes(x = ins, y = outfit, colour = domain)) +
+  scale_y_continuous("Outfit", limits = c(0, 7)) +
+  scale_x_discrete("Instrument") +
+  geom_hline(yintercept = 1, colour = "grey", size = 1) +
+  geom_boxplot()
+plot8
 
 # plotting with basic ggparcoord from GGally
 library(GGally)
-g1 <- ggparcoord(df, columns = c(3, 5), groupColumn = 2, scale = 'globalminmax',?
+g1 <- ggparcoord(df, columns = 3:4, groupColumn = 2, scale = 'globalminmax',?
                 showPoints = TRUE, alphaLines = 0.7) +
   xlab("Key") +
   ylab("Item difficulty")
@@ -200,7 +204,7 @@ g <- g1 +
   geom_text(aes(y = tau_gsed2206, x = 1, label = item), data = df[df$instrument == "LF", ],
             nudge_x = -0.2, inherit.aes = FALSE, cex = 3, check_overlap = TRUE,
             family = "Courier") +
-  geom_text(aes(y = tau_293_0, x = 2, label = item), data = df[df$instrument == "SF", ],
+  geom_text(aes(y = tau_294_0, x = 2, label = item), data = df[df$instrument == "SF", ],
           nudge_x = 0.2, inherit.aes = FALSE, cex = 3, check_overlap = TRUE,
           family = "Courier")
 g
@@ -208,7 +212,7 @@ g
 # save as one pdf with all variations
 path <- file.path("~/project/gsed/phase1")
 device <- "pdf"
-file <- file.path(path, "key_match_293_0_anchor.pdf")
+file <- file.path(path, "key_match.pdf")
 pdf(file, width = 6, height = 30)
 print(g)
 message("Saved to: ", file)
@@ -225,8 +229,8 @@ dataset <- data.frame(
   decompose_itemnames(d$gsed2)
 )
 labs <- data.frame(
-  label = get_labels(items = dataset$gsed, trim = 50),
-  gsed = names(get_labels(items = dataset$gsed, trim = 30))
+  label = get_labels(items = gsed, trim = 50),
+  gsed = names(get_labels(items = gsed, trim = 30))
 )
 dataset <- left_join(dataset, labs, by = "gsed")
 
@@ -235,4 +239,4 @@ require(openxlsx)
 wb <- createWorkbook()
 addWorksheet(wb, sheet = "keys", gridLines = TRUE)
 writeData(wb, sheet = "keys", x = dataset, rowNames = FALSE, withFilter = TRUE)
-saveWorkbook(wb, file = file.path(path, "key_match_293_0_anchor.xlsx"), overwrite = TRUE)
+# saveWorkbook(wb, file = file.path(path, "key_match.xlsx"), overwrite = TRUE)

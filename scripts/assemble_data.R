@@ -29,10 +29,10 @@
 # If needed, install gsedread from GitHub
 pkg <- "gsedread"
 if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
-    answer <- askYesNo(paste("Package", pkg, "needed. Install from GitHub?"))
-    if (answer) remotes::install_github("d-score/gsedread")
+  answer <- askYesNo(paste("Package", pkg, "needed. Install from GitHub?"))
+  if (answer) remotes::install_github("d-score/gsedread")
 }
-if (packageVersion("gsedread") < "0.7.1") stop("Needs gsedread 0.7.1")
+if (packageVersion("gsedread") < "0.7.3") stop("Needs gsedread 0.7.3")
 
 library(gsedread)
 library(dplyr)
@@ -121,8 +121,8 @@ lf <- bind_rows(lf_f, lf_a_wide) %>%
   distinct(gsed_id, age, vist_type, .keep_all = TRUE) %>%
   mutate(ins = "lf") %>%
   arrange(gsed_id, age, vist_type) %>%
-  select(gsed_id, age, vist_type, ins, adm, file, parent_id:location,
-         date, caregiver, ah01:m03, gtogmd001:gtofmd054) %>%
+  dplyr::select(gsed_id, age, vist_type, ins, adm, file, parent_id:location,
+                date, caregiver, ah01:m03, gtogmd001:gtofmd054) %>%
   as_tibble()
 dim(lf)
 
@@ -139,9 +139,9 @@ work <- bind_rows(sf, lf, bsid) %>%
   mutate(n_sf = rowSums(!is.na(across(starts_with("gpa")))),
          n_lf = rowSums(!is.na(across(starts_with("gto")))),
          n_bsid = rowSums(!is.na(across(starts_with("by3"))))) %>%
-  select(gsed_id, age, ins, worker_code, adm, vist_type, n_sf:n_bsid,
-         file:caregiver, age_adj_premature, ah01:m03,
-         gpalac001:by3gmd072)
+  dplyr::select(gsed_id, age, ins, worker_code, adm, vist_type, n_sf:n_bsid,
+                file:caregiver, age_adj_premature, ah01:m03,
+                gpalac001:by3gmd072)
 
 # check whether combination gsed_id, age, ins, worker_code is unique
 uni <- work %>%

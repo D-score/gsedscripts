@@ -1,6 +1,18 @@
 # This script fits the Rasch model to all items of the LF and SF collected
 # in Phase 1 Validation, fixed data only.
 #
+# SETS TWO ANCHOR ITEMS
+# 20: Lift head 45 degrees (Same as before)
+# 40: Pulls to stand (Replaces "Sits in stable position")
+# Effect: Compared to previous anchoring:
+# 1) D-score during the first year increases at slower rate
+# 2) D-score beyond 3 yrs increases at higher rate
+# Effect 1 is beneficial because it fits the GSED data better
+# Effect 2 is beneficial because it postpones the developmental asymptote
+#
+# Setting the anchor removes the arbitrary transformation c(55, 4)
+# The actual transform is according to the new anchors is c(54.94, 4.06)
+#
 # The script
 # 1. select LF and SF items
 # 2. fuzzy joins the LF and SF administration to one record
@@ -17,7 +29,7 @@
 # The objective is to estimate difficulty parameters under the assumption
 # that the D-score of a child should be the same for both LF and SF.
 #
-# Aug 7, 2022, 2022 SvB
+# Aug 8, 2022, 2022 SvB
 #
 # R package fuzzyjoin
 library(dplyr)
@@ -89,17 +101,23 @@ items <- items[t1 & t2]
 data <- data %>%
   select(all_of(adm), all_of(items))
 
+# 20: Lift head 45 degrees
+# 40: Pulls to stand
+anchor <- c(20, 40)
+names(anchor) <- c("gtogmd001", "gtogmd026")
+
 # Fit the Rasch model
-model_name <- paste(length(items), "0", sep = "_")
+model_name <- paste(length(items), "0", "anchor", sep = "_")
 model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     data = data,
                     name = model_name,
-                    transform = c(55, 4),
+                    anchors = anchor,
                     data_package = "",
-                    relevance = c(-20, 5))
+                    relevance = c(-Inf, Inf))
 
 # Store and reload model
-path <- file.path("~/project/gsed/phase1/lfsfbsid", model_name)
+path <- file.path("~/project/gsed/phase1/remodel", model_name)
+if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
 model <- readRDS(file.path(path, "model.Rds"))
@@ -127,5 +145,3 @@ transform <- coef(cal)
 
 # statistics
 with(model$item_fit, table(outfit<1.2 & infit<1.2))
-
-
