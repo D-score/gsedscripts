@@ -1,0 +1,206 @@
+---
+title: "Technical report - H Scoring"
+author: "Stef van Buuren"
+date: "20221027"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## D-score and DAZ
+
+Suppose that you have administered SF, LF or both to one or more children. A next step is to calculate the developmental score ($D$-score) and the age-adjested equivalent (DAZ) for each child. This step is known as **scoring**. The present section provides recipes on how to calculate these score. We may pick one of the following two methods:
+
+1. Online calculator. The online Shiny app <https://tnochildhealthstatistics.shinyapps.io/dcalculator/> is a convenient option for users not familiar with `R`. The app contains online documentation and instructions and will not be further discussed here.
+2. `R` package `dscore`. The `R` package [dscore]<https://CRAN.R-project.org/package=dscore> is a flexible option with all the tools needed to calculate the $D$-score. It is an excellent choice for users familiar with `R` and users who like to incorporate $D$-score calculations into a workflow.
+
+### Preliminaries
+
+- We use the `R` language. If you are new to `R` consult the [Getting Started with R](https://support.rstudio.com/hc/en-us/articles/201141096-Getting-Started-with-R) site; 
+- You need to install the `R` package `dscore` on your local machine;
+- The child data need to be stored as a `data.frame`, a standard `R` tabular structure;
+- You need to run the `dscore()` function to calculate the $D$-score and DAZ. The function returns a table with six columns with the estimates with the same number of rows as your data.
+
+### Install the `dscore` package
+
+The `dscore` package contains tools to
+
+- Map your item names to the GSED convention
+- Calculate *D*-scores from item level responses
+- Transform the *D*-scores into DAZ, age-standardised Z-scores
+
+The required input consists of *item level* responses on milestones from widely used instruments for measuring child development, including the GSED LF and GSED SF instruments.
+
+There are two versions of the `dscore` package. The curated and published version that reside on [CRAN](https://CRAN.R-project.org/package=dscore) is recommended for general use. Install the package as
+
+```{r eval=FALSE}
+install.packages("dscore")
+```
+
+In some cases, there may be a newer version that includes extensions and bug fixes that are not yet available on CRAN. You can install the development version from [GitHub](https://github.com/) with:
+
+```{r eval=FALSE}
+install.packages("remotes")
+remotes::install_github("d-score/dscore")
+```
+
+Note that the second route requires that you have a local C++ compiler available for building the package from source. We use here `dscore 1.6.5`.
+
+```{r include=FALSE}
+stopifnot(packageVersion("dscore") >= "1.6.5")
+```
+
+
+### Organise your data
+
+The `dscore()` function accepts item names that follow the GSED 9-position schema. A name with a length of nine characters identifies every milestone. The following table shows the construction of names.
+
+Position   | Description          | Example
+----------:|:-------------------- |:-------------
+1-3        | instrument           | `by3`
+4-5        | developmental domain | `cg`
+6          | administration mode  | `d`
+7-9        | item number          | `018`
+
+Thus, item `by3cgd018` refers to the 18th item in the cognitive scale of the Bayley-III. The label of the item can be obtained by 
+
+```{r getlabels}
+library(dscore)
+get_labels("by3cgd018")
+```
+
+The instrument codes for the GSED LF and GSED SF are `gto` and `gpa`, respectively. The first three items in the SF (2020 version) are:
+
+```{r}
+items_gpa <- get_itemnames(instrument = "gpa", order = "indm")
+head(items_gpa, 3)
+```
+
+The `order` argument is needed to sort items according to sequence number 1 to 139 as in the SF form (2020 version). For the LF (2020 version) we rely on the default order that provides items numbered within streams fine motor (`fm`), gross motor (`gm`) and language (`lg`), respectively.
+
+```{r}
+items_gto <- get_itemnames(instrument = "gto")
+head(items_gto, 3)
+```
+
+The labels from these items can be obtained as
+
+```{r eval=FALSE}
+labels_gto <- get_labels(items_gto)
+```
+
+[*NOTE: For user convenience: We need to generalise get_itemnames() to different versions of SF and LF (that use other item sequences).*]
+
+### Response data format
+
+The `dscore` package contains methods for binary items only. Each child at a given age occupies a separate row. The `gsample` dataset in the `dscore` package is an example of data in the proper format. It contains 10 rows with responses of 10 children measured on the GSED SF and GSED LF at various ages. The dataset has 295 columns. The first seven columns of the dataset look like:
+
+```{r gsample}
+gsample[, 1:7]
+```
+
+Each row corresponds to a visit. Columns starting with `gpa` hold the responses on items from GSED-SF items. Item level data should be coded as `0` (FAIL), `1` (PASS) or `NA` (not administered, not answered). Note that the easiest items are not administered to children older then 6 months, so we see a large block of `NA`'s for the early SF items.
+
+
+### Calculate $D$-score
+
+Once the data are in proper shape, calculation of the $D$-score is straightforward. The `gssample` dataset has properly named columns that identify each item. 
+
+Since one SF item (`gpamoc008`) is not present in the data, we need to remove it from the vector with item names. You may calculate the $D$-score from the remaining 138 SF items as
+
+```{r}
+items_gpa <- setdiff(items_gpa, "gpamoc008")
+sf <- dscore(gsample, items = items_gpa, xname = "agedays", xunit = "days")
+head(sf)
+```
+
+The table below provides the interpretation of the output: 
+
+Name   | Interpretation
+------ | -------------
+`a`    | Decimal age in years
+`n`    | Number of items used to calculate the $D$-score
+`p`    | Percentage of passed milestones
+`d`    | $D$-score estimate, EAP estimate
+`sem`  | Standard error of measurement, standard deviation of the posterior
+`daz`  | $D$-score corrected for age
+
+Calculation of the $D$-score for the GSED LF is similar:
+
+```{r}
+# calculate D-score for LF
+lf <- dscore(gsample, items = items_gto, xname = "agedays", xunit = "days")
+head(lf)
+```
+
+In general, the $D$-score from SF and LF may differ by a few points, but in exceptional cases (e.g. for row 5) the difference can be large.
+
+It is possible to calculate $D$-score for item subsets by tweaking the `items` argument. If you do not provide the `items` argument, then the $D$-score is calculated from all items available (here GSED SF and GSED LF). For example,
+
+```{r}
+# calculate D-score from all available items from all instruments
+head(dscore(gsample, xname = "agedays", xunit = "days"))
+```
+
+### Phase 1 references and DAZ
+
+We used the GSED Phase I data to calculate age-conditional reference scores for the $D$-score. The references are based on about 12,000 administration of the GSED SF and GSED LF from Bangla Desh, Pakistan and Tanzania. We may extract the references as
+
+```{r}
+library(dplyr)
+ref <- builtin_references %>% 
+  filter(pop == "phase1") %>% 
+  select(pop, age, mu, sigma, nu, tau, SDM2, SD0, SDP2)
+head(ref)
+```
+
+The columns `mu`, `sigma`, `nu` and `tau` are the age-varying parameters of a Box-Cox $t$ (BCT) distribution. 
+
+The figure below plots the -2SD, 0SD and +2SD centiles plus 20 $D$-scores (10 LF and 10 SF) for the `gsample` data.
+
+```{r echo=FALSE, fig.height=5, fig.width=10}
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+
+r <- builtin_references %>% 
+  filter(pop == "phase1" & age <= 3.5) %>% 
+  mutate(m = age * 12)
+
+lf$ins <- "lf"; lf$m <- lf$a * 12
+sf$ins <- "sf"; sf$m <- sf$a * 12
+data <- bind_rows(lf, sf)
+g1 <- ggplot(data, aes(x = m, y = d, group = ins, color = ins)) + 
+  theme_light() +
+  annotate("polygon", x = c(r$age, rev(r$age)),
+           y = c(r$SDM2, rev(r$SDP2)), alpha = 0.06, fill = "#C5EDDE") +
+  annotate("line", x = r$m, y = r$SDM2, lwd = 0.5, color = "#C5EDDE") +
+  annotate("line", x = r$m, y = r$SDP2, lwd = 0.5, color = "#C5EDDE") +
+  annotate("line", x = r$m, y = r$SD0, lwd = 1, color = "#C5EDDE") +
+  scale_x_continuous("Age (in months)",
+                     limits = c(0, 42),
+                     breaks = seq(0, 42, 12)) +
+  scale_y_continuous(
+    expression(paste(italic(D), "-score", sep = "")),
+    breaks = seq(0, 80, 20),
+    limits = c(0, 90)) +
+  geom_point(size = 2) +
+  theme(legend.position = "none")
+g2 <- ggplot(data, aes(x = m, y = daz, group = ins, color = ins)) + 
+  theme_light() +
+  #geom_hline(c(-2, 0, 2), lwd = c(0.5, 1, 0.5), color = "#C5EDDE") +
+  scale_x_continuous("Age (in months)",
+                     limits = c(0, 42),
+                     breaks = seq(0, 42, 12)) +
+  scale_y_continuous(
+    "DAZ",
+    breaks = seq(-4, 4, 2),
+    limits = c(-5, 5)) +
+  geom_point(size = 2) +
+  theme(legend.position = "none")
+g1 + g2
+```
