@@ -1,0 +1,106 @@
+# This script calculates basic data counts
+# Phase 1 Validation, fixed data: GSED LF, GSED SF, BSID
+#
+# Dependencies
+# Assumed environmental variable: ONEDRIVE_GSED
+# Inline R scripts: assemble_data.R
+#                   edit_data.R
+#
+# The objective is to estimate difficulty parameters under the assumption
+# that the D-score of a child should be the same for both LF and SF.
+#
+# This model forms the CORE of the D-score definition.
+#
+# Aug 8, 2022, 2022 SvB
+# Edits Aug 10, 2022 SvB
+
+library(dplyr)
+library(ggplot2)
+library(fuzzyjoin)
+
+# If needed, install dmetric from GitHub
+if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
+  answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
+  if (answer) remotes::install_github("d-score/dmetric")
+}
+if (packageVersion("dmetric") < "0.63.1") stop("Needs dmetric 0.63.1")
+
+library("dmetric")
+
+# get all data
+suppressWarnings(source("scripts/assemble_data.R"))
+source("scripts/edit_data.R")
+
+# select instrument data and pre-process, select fixed administration
+adm <- c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
+items <- colnames(work)[starts_with(c("gpa", "gto"), vars = colnames(work))]
+long <- work %>%
+  filter(adm == "fixed") %>%
+  mutate(
+    subjido = gsed_id,
+    agedays = age,
+    cohort = strtrim(subjido, 7),
+    cohort = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
+    cohortn = as.integer(strtrim(subjido, 2)) + 100L,
+    subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
+    joinid = subjid * 10,
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
+  drop_na(agedays) %>%
+  select(all_of(adm), all_of(items))
+
+# Fuzzy match on gsed_id and agedays
+# We allow for a 4-day difference between the SF, LF and BSID measurement
+# Double fuzzy match, lf, sf keep all records
+sf <- long %>%
+  filter(ins == "sf") %>%
+  select(all_of(adm), items[all_of(starts_with("gpa", vars = items))])
+lf <- long %>%
+  filter(ins == "lf") %>%
+  select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
+data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
+                                          max_dist = 4, distance_col = "dist") %>%
+  mutate(
+    cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
+    cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
+    subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
+    joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
+    agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
+    ins = ifelse(is.na(ins.x), ins.y, ins.x),
+  ) %>%
+  select(all_of(adm), any_of(items))
+# Result: 6838 records, 299 columns
+
+# 20: Lift head 45 degrees
+# 40: Pulls to stand
+anchor <- c(20, 40)
+names(anchor) <- c("gtogmd001", "gtogmd026")
+
+# Fit the Rasch model
+model_name <- paste(length(items), "0", sep = "_")
+model <- fit_dmodel(varlist = list(adm = adm, items = items),
+                    data = data,
+                    name = model_name,
+                    anchors = anchor,
+                    data_package = "")
+
+# Store and reload model
+path <- file.path("~/project/gsed/phase1/remodel", model_name)
+if (!dir.exists(path)) dir.create(path)
+saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
+saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
+model <- readRDS(file.path(path, "model.Rds"))
+
+# Plot figures
+theme_set(theme_light())
+col.manual <- c("GSED-BGD" = "#D93F46", "GSED-PAK" = "#489033", "GSED-TZA" = "#47A1D8")
+r <- plot_dmodel(data = data,
+                 model = model,
+                 path = path,
+                 col.manual = col.manual,
+                 ref_name = "phase1",
+                 maxy = 100,
+                 xlim = c(0, 85),
+                 xbreaks = seq(0, 100, 10))
+
+# statistics
+with(model$item_fit, table(outfit<1.2 & infit<1.2))
