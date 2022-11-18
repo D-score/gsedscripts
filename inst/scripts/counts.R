@@ -89,11 +89,10 @@ cat("Number of studies:      ", n_studies, "\n")
 cat("Number of countries:    ", n_countries, "\n")
 
 cat("Instruments: \n")
-instruments
+cat(instruments, "\n")
 
 cat("Studies: \n")
-unique(data$cohort)
+cat(unique(data$cohort), "\n")
 
 cat("Countries: \n")
-unique(ctrycd)
-
+cat(unique(ctrycd), "\n")
