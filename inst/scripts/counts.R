@@ -3,37 +3,21 @@
 #
 # Dependencies
 # Assumed environmental variable: ONEDRIVE_GSED
-# Inline R scripts: assemble_data.R
-#                   edit_data.R
+# Inline R scripts: gsedscripts package
 #
-# The objective is to estimate difficulty parameters under the assumption
-# that the D-score of a child should be the same for both LF and SF.
-#
-# This model forms the CORE of the D-score definition.
-#
-# Aug 8, 2022, 2022 SvB
-# Edits Aug 10, 2022 SvB
+# Nov 18 2022, SvB
 
-library(dplyr)
-library(ggplot2)
 library(fuzzyjoin)
+library(dplyr)
+fn <- system.file("scripts/assemble_data.R", package = "gsedscripts")
+suppressWarnings(source(fn))
 
-# If needed, install dmetric from GitHub
-if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
-  answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
-  if (answer) remotes::install_github("d-score/dmetric")
-}
-if (packageVersion("dmetric") < "0.63.1") stop("Needs dmetric 0.63.1")
-
-library("dmetric")
-
-# get all data
-suppressWarnings(source("scripts/assemble_data.R"))
-source("scripts/edit_data.R")
+# tabulate fixed/adaptive for bsid/lf/sf
+with(work, table(ins, adm))
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
-items <- colnames(work)[starts_with(c("gpa", "gto"), vars = colnames(work))]
+items <- colnames(work)[starts_with(c("gpa", "gto", "by3"), vars = colnames(work))]
 long <- work %>%
   filter(adm == "fixed") %>%
   mutate(
@@ -50,14 +34,17 @@ long <- work %>%
 
 # Fuzzy match on gsed_id and agedays
 # We allow for a 4-day difference between the SF, LF and BSID measurement
-# Double fuzzy match, lf, sf keep all records
+# Double fuzzy match, lf, sf, bsid, keep all records
 sf <- long %>%
   filter(ins == "sf") %>%
   select(all_of(adm), items[all_of(starts_with("gpa", vars = items))])
 lf <- long %>%
   filter(ins == "lf") %>%
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
-data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
+bsid <- long %>%
+  filter(ins == "bsid") %>%
+  select(all_of(adm), items[all_of(starts_with("by3", vars = items))])
+joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
                                           max_dist = 4, distance_col = "dist") %>%
   mutate(
     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
@@ -68,39 +55,45 @@ data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
     ins = ifelse(is.na(ins.x), ins.y, ins.x),
   ) %>%
   select(all_of(adm), any_of(items))
-# Result: 6838 records, 299 columns
+data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"),
+                                        max_dist = 4, distance_col = "dist") %>%
+  mutate(
+    cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
+    cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
+    subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
+    joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
+    agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
+    ins = ifelse(is.na(ins.x), ins.y, ins.x),
+  ) %>%
+  select(all_of(adm), any_of(items))
+# Result: 6838 records, 626 columns
 
-# 20: Lift head 45 degrees
-# 40: Pulls to stand
-anchor <- c(20, 40)
-names(anchor) <- c("gtogmd001", "gtogmd026")
+n_children <- length(unique(data$subjid))
+n_visits <- nrow(data)
+n_scores <- sum(!is.na(data[, items]))
+n_items <- length(items)
+instruments <- unique(dscore::decompose_itemnames(items)$instrument)
+n_instruments <- length(instruments)
+n_mean_items <- n_scores/n_visits
+n_studies <- length(unique(data$cohort))
+ctrycd <- substr(data$cohort, 6, 8)
+n_countries <- length(unique(ctrycd))
 
-# Fit the Rasch model
-model_name <- paste(length(items), "0", sep = "_")
-model <- fit_dmodel(varlist = list(adm = adm, items = items),
-                    data = data,
-                    name = model_name,
-                    anchors = anchor,
-                    data_package = "")
+cat("Number of children:     ", n_children, "\n")
+cat("Number of items:        ", n_items, "\n")
+cat("Number of visits:       ", n_visits, "\n")
+cat("Number of responses:    ", n_scores, "\n")
+cat("Number of instruments:  ", n_instruments, "\n")
+cat("Items per visit (mean): ", n_mean_items, "\n")
+cat("Number of studies:      ", n_studies, "\n")
+cat("Number of countries:    ", n_countries, "\n")
 
-# Store and reload model
-path <- file.path("~/project/gsed/phase1/remodel", model_name)
-if (!dir.exists(path)) dir.create(path)
-saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
-saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
-model <- readRDS(file.path(path, "model.Rds"))
+cat("Instruments: \n")
+instruments
 
-# Plot figures
-theme_set(theme_light())
-col.manual <- c("GSED-BGD" = "#D93F46", "GSED-PAK" = "#489033", "GSED-TZA" = "#47A1D8")
-r <- plot_dmodel(data = data,
-                 model = model,
-                 path = path,
-                 col.manual = col.manual,
-                 ref_name = "phase1",
-                 maxy = 100,
-                 xlim = c(0, 85),
-                 xbreaks = seq(0, 100, 10))
+cat("Studies: \n")
+unique(data$cohort)
 
-# statistics
-with(model$item_fit, table(outfit<1.2 & infit<1.2))
+cat("Countries: \n")
+unique(ctrycd)
+
