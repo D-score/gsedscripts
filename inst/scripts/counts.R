@@ -81,7 +81,7 @@ n_countries <- length(unique(ctrycd))
 
 cat("Number of children:     ", n_children, "\n")
 cat("Number of items:        ", n_items, "\n")
-cat("Number of visits:       ", n_visits, "\n")
+cat("Number of visits (> 4d):", n_visits, "\n")
 cat("Number of responses:    ", n_scores, "\n")
 cat("Number of instruments:  ", n_instruments, "\n")
 cat("Items per visit (mean): ", n_mean_items, "\n")
