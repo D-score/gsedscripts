@@ -1,3 +1,7 @@
+# gsedscripts 0.4.0
+
+* Adds inst/scripts/counts.R to produces basic counts on LF, SF and BSID
+
 # gsedscripts 0.3.0
 
 * Adds key update and scoring Rmd's for reporting

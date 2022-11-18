@@ -13,7 +13,7 @@ fn <- system.file("scripts/assemble_data.R", package = "gsedscripts")
 suppressWarnings(source(fn))
 
 # tabulate fixed/adaptive for bsid/lf/sf
-with(work, table(ins, adm))
+# with(work, table(ins, adm))
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
