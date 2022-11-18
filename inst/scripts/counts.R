@@ -69,19 +69,22 @@ data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"
 # Result: 6838 records, 626 columns
 
 n_children <- length(unique(data$subjid))
-n_visits <- nrow(data)
+n_dup <- sum(duplicated(long[, c("subjid", "agedays")]))
+n_visits1 <- nrow(long) - n_dup
+n_visits5 <- nrow(data)
 n_scores <- sum(!is.na(data[, items]))
 n_items <- length(items)
 instruments <- unique(dscore::decompose_itemnames(items)$instrument)
 n_instruments <- length(instruments)
-n_mean_items <- n_scores/n_visits
+n_mean_items <- n_scores/n_visits1
 n_studies <- length(unique(data$cohort))
 ctrycd <- substr(data$cohort, 6, 8)
 n_countries <- length(unique(ctrycd))
 
 cat("Number of children:     ", n_children, "\n")
 cat("Number of items:        ", n_items, "\n")
-cat("Number of visits (> 4d):", n_visits, "\n")
+cat("Number of visits:       ", n_visits1, "\n")
+cat("Number of visits (> 4d):", n_visits5, "\n")
 cat("Number of responses:    ", n_scores, "\n")
 cat("Number of instruments:  ", n_instruments, "\n")
 cat("Items per visit (mean): ", n_mean_items, "\n")
