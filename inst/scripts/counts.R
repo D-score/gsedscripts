@@ -68,6 +68,11 @@ data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"
   select(all_of(adm), any_of(items))
 # Result: 6838 records, 626 columns
 
+# number of duplo measurements
+has_lf <- apply(!is.na(select(data, items[all_of(starts_with("gpa", vars = items))])), 1, any)
+has_sf <- apply(!is.na(select(data, items[all_of(starts_with("gto", vars = items))])), 1, any)
+has_bsid <- apply(!is.na(select(data, items[all_of(starts_with("by3", vars = items))])), 1, any)
+
 n_children <- length(unique(data$subjid))
 n_dup <- sum(duplicated(long[, c("subjid", "agedays")]))
 n_visits1 <- nrow(long) - n_dup
@@ -80,6 +85,7 @@ n_mean_items <- n_scores/n_visits1
 n_studies <- length(unique(data$cohort))
 ctrycd <- substr(data$cohort, 6, 8)
 n_countries <- length(unique(ctrycd))
+n_duplo <- sum(has_lf & has_sf)
 
 cat("Number of children:     ", n_children, "\n")
 cat("Number of items:        ", n_items, "\n")
@@ -90,6 +96,7 @@ cat("Number of instruments:  ", n_instruments, "\n")
 cat("Items per visit (mean): ", n_mean_items, "\n")
 cat("Number of studies:      ", n_studies, "\n")
 cat("Number of countries:    ", n_countries, "\n")
+cat("Number of duplo tests:  ", n_duplo, "\n")
 
 cat("Instruments: \n")
 cat(instruments, "\n")
