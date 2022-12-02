@@ -32,7 +32,7 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package", pkg, "needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/gsedread")
 }
-if (packageVersion("gsedread") < "0.7.3") stop("Needs gsedread 0.7.3")
+if (packageVersion("gsedread") < "0.8.0") stop("Needs gsedread 0.8.0")
 
 library(gsedread)
 library(dplyr)
@@ -64,14 +64,14 @@ colnames(bsid) <- rename_vector(colnames(bsid), contains = "bsid_")
 # administrations.
 sf_a_wide <- sf_a %>%
   pivot_wider(id_cols = gsed_id, names_from = item, values_from = scores)
-cat("Total number of unique gsed_id's: ", length(unique(sf_a_wide$gsed_id)), "\n")
+# cat("Total number of unique gsed_id's: ", length(unique(sf_a_wide$gsed_id)), "\n")
 
 # count administrations with not-duplicate gsed_id
 nodup <- sf_a %>%
   dplyr::group_by(gsed_id, item) %>%
   dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
   dplyr::filter(n == 1L)
-cat("Total number of unique gsed_id's with one administration: ", length(unique(nodup$gsed_id)), "\n")
+# cat("Total number of unique gsed_id's with one administration: ", length(unique(nodup$gsed_id)), "\n")
 
 gsed_id_nodup <- unique(nodup$gsed_id)
 gsed_id_nodup <- setdiff(gsed_id_nodup, c("20-GSED-0816", "17-GSED-1402"))
@@ -97,14 +97,14 @@ dim(sf)
 # -- transform adaptive LF into wide format
 lf_a_wide <- lf_a %>%
   pivot_wider(id_cols = gsed_id, names_from = item, values_from = scores)
-cat("Total number of unique gsed_id's: ", length(unique(lf_a_wide$gsed_id)), "\n")
+# cat("Total number of unique gsed_id's: ", length(unique(lf_a_wide$gsed_id)), "\n")
 
 # count administrations with not-duplicate gsed_id
 nodup <- lf_a %>%
   dplyr::group_by(gsed_id, item) %>%
   dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
   dplyr::filter(n == 1L)
-cat("Total number of unique gsed_id's with one administration: ", length(unique(nodup$gsed_id)), "\n")
+# cat("Total number of unique gsed_id's with one administration: ", length(unique(nodup$gsed_id)), "\n")
 
 gsed_id_nodup <- unique(nodup$gsed_id)
 # gsed_id_nodup <- setdiff(gsed_id_nodup, c("20-GSED-0816", "17-GSED-1402"))
