@@ -1,3 +1,8 @@
+# gsedscripts 0.5.0 
+
+* Adds document to log actions taken to solve the LF item order problem
+* Updates data reading scripts `assemble_data.R` and `edit_data.R`
+
 # gsedscripts 0.4.0
 
 * Adds inst/scripts/counts.R to produces basic counts on LF, SF and BSID
