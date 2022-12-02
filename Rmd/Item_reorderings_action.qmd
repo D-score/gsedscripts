@@ -1,0 +1,46 @@
+---
+title: "Internal report - Action done to repair item ordering problem"
+author: "Stef van Buuren"
+date: 20221202 (v2)
+format: pdf
+---
+
+## Problem
+
+I’ve looked into the document `Phase_1_master_data_dictionary_V1.0_29_11_2022.xlsx`. I have
+
+ - compared the updated labels to the itemtable and itembank in the dscore package
+- matched the Phase 1 LF items to the Phase 2 LF items.
+
+Findings: 
+
+- There are 34 mismatches between the updated labels and the information that I used on May 30 to construct the itemtable and itembank for the `gto` items in the `dscore` package;
+- By itself, having erroneous labels does not affect the tau estimates of the core `293_0` model, so that part of the work is safe.
+- **However**: Anything that uses the labels should be regarded with high suspicion and may need to be redone. For example, I had chosen item “Pulls him or herself to standing position” as the upper anchor at D = 40. It now appears that the upper anchor is different: “A26. Moves from lying to sitting”. Thus, I need to redocument the anchor description. Also, the LF items in the Phase 2 LF version are not ordered in tau (as was intended), so we may face a new reordering step if we want to order items in difficulty. There are probably also other consequences, e.g., where we use the gto-based items in examples or applications.
+
+## Remedial actions
+
+- Alert project members of problem
+- Created and distributed a spreadsheet that compares LF labels for three versions: 
+
+  + `dscore::builtin_itemtable` (incorrect since May 30);
+  + `LF1`, corrected using RedCAP comparisons from `Phase_1_master_data_dictionary_V1.0_29_11_2022.xlsx`;
+  + `LF2`, from `GSED LF Item Guide_October22_FINAL_clean_27Nov22.docx` and manually matched to `LF1`.
+  
+- Update and document `builtin_itemtable` with correct `gto` labels; (DONE)
+- Update and document `builtin_itembank` with labels (ONLY DONE FOR GTO ITEMS)
+- Redocument anchors (DONE)
+- Table `itemnames_translate.tsv` in `gsedread` is outdated and needs to be updated (DONE)
+- Links to `gsed` lexicon items need to be updated to make appropriate matches to items from other instruments (critical for model 818_6). (DONE)
+- Update data reading scripts `assemble_data.R` and `edit_data.R` in `gsedscripts`. (DONE)
+
+## To do
+
+- Phase I data need to be re-read and re-analysed after updating `itemnames_translate`
+- Scripts calling `gsedread::rename_vector()` or `gsedread::rename_variables()` need to be rerun after updating `itemnames_translate`
+- README of `gsedread` package needs to be updated
+- Rerun core 293_0 model, check edits, redocument, regenerate diagnostic plots, etc. Check that result is identical.
+- Refit full 818_6 model, update the item bank
+- Check with Iris on effect on adaptive analyses
+- Weed out intermediate and out-of-date models from the `dscore` package
+- Think about consequences that might have been missed...
