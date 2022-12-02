@@ -1,7 +1,7 @@
 ---
 title: "Internal report - Action done to repair item ordering problem"
 author: "Stef van Buuren"
-date: 20221202 (v2)
+date: 20221202 (v3)
 format: pdf
 ---
 
@@ -27,8 +27,9 @@ Findings:
   + `LF1`, corrected using RedCAP comparisons from `Phase_1_master_data_dictionary_V1.0_29_11_2022.xlsx`;
   + `LF2`, from `GSED LF Item Guide_October22_FINAL_clean_27Nov22.docx` and manually matched to `LF1`.
   
-- Update and document `builtin_itemtable` with correct `gto` labels; (DONE)
-- Update and document `builtin_itembank` with labels (ONLY DONE FOR GTO ITEMS)
+- Update and document `builtin_itemtable` in `dscore` package with correct `gto` labels; (DONE)
+- Update and document `builtin_itembank` in `dscore` package (NOW ONLY DONE FOR GTO ITEMS). Do not use `dscore` package as long as this is not fully updated.
+- Add NOTE to README to wait for `dscore 1.7.0` (DONE)
 - Redocument anchors (DONE)
 - Table `itemnames_translate.tsv` in `gsedread` is outdated and needs to be updated (DONE)
 - Links to `gsed` lexicon items need to be updated to make appropriate matches to items from other instruments (critical for model 818_6). (DONE)
@@ -36,11 +37,13 @@ Findings:
 
 ## To do
 
+- Rerun core 293_0 model, check edits, redocument, regenerate diagnostic plots, etc. Check that result is identical.
+- Refit full 818_6 model
+- Add updated tau estimates to `dscore::builtin_itembank`
+- Update to `dscore 1.7.0`
 - Phase I data need to be re-read and re-analysed after updating `itemnames_translate`
 - Scripts calling `gsedread::rename_vector()` or `gsedread::rename_variables()` need to be rerun after updating `itemnames_translate`
 - README of `gsedread` package needs to be updated
-- Rerun core 293_0 model, check edits, redocument, regenerate diagnostic plots, etc. Check that result is identical.
-- Refit full 818_6 model, update the item bank
 - Check with Iris on effect on adaptive analyses
 - Weed out intermediate and out-of-date models from the `dscore` package
 - Think about consequences that might have been missed...
