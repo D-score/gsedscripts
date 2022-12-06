@@ -1,0 +1,33 @@
+---
+title: "Item comparison 818_6 (2208 vs 2212)"
+author: "Stef van Buuren"
+format: html
+---
+
+## Objective
+
+This table lists 14 items for the the tau estimates differs more than 5 D-score points between key `gsed2208` and `gsed2212`
+
+## Table
+
+Item          | Label                                              | Evaluation | Notes
+------------- | ---------------------------------------------------| ---------- | -------------------------------------------------------------
+by3cgd059     | Attends to story                                   | - -        | fits worse, by3 items looks now more difficult, bad match to LF
+by3exd037     | Names Action Picture Series: 5 Pictures            | ++         | old model seems to wrong, now credible
+ddigmd061     | Balances head well while sitting                   | ++         | better discrimination, DIF with Dutch children
+kdigmd034     | Moves from sitting to standing not using hands     | +          | better discrimination, bad match to KDI
+mdtgmd005     | Lifts head, shoulders and chest when prone         | ++         | better discrimination, DIF with MWI children
+mdtgmd018     | Walks well                                         | ++         | better discrimination, from severe non-fitting to fit
+mdtgmd019     | Basic running, may fall over                       | +          | better discrimination
+mdtgmd021     | Runs well, stopping and starting without falling   | - -        | from OK to very bad, incorrect match
+mdtlgd002     | Happy vocalizing or making sounds  not crying      | +          | better discrimination, but large DIF overall
+mdtlgd003     | Laughs/chuckles                                    | -          | looks slightly worse
+mdtlgd029     | Understands the adjectives such as faster          | +          | better discrimination
+mdtsed005     | Recognizes or calms and quiets with caregivers     | -          | from OK to bad fit, tau much lower (which is probably OK)
+teplgd031     | Child can name at least 2 colors                   | - -        | from OK to bad fit, tau seems too high
+teplgd034     | Child can point to and identify at least 2 shapes  | -          | worse discrimination, tau seems too high
+
+## Actions
+
+We keep matches that are improved (i.e. with + or ++), remove matches that became worse (- or - -), and refit model 818_6 to obtain key `gsed2212`.
+
