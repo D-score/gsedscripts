@@ -1,7 +1,7 @@
 ---
 title: "Internal report - Action done to repair item ordering problem"
 author: "Stef van Buuren"
-date: 20221202 (v3)
+date: 20221205 (v4)
 format: pdf
 ---
 
@@ -28,18 +28,19 @@ Findings:
   + `LF2`, from `GSED LF Item Guide_October22_FINAL_clean_27Nov22.docx` and manually matched to `LF1`.
   
 - Update and document `builtin_itemtable` in `dscore` package with correct `gto` labels; (DONE)
-- Update and document `builtin_itembank` in `dscore` package (NOW ONLY DONE FOR GTO ITEMS). Do not use `dscore` package as long as this is not fully updated.
+- Do not use `dscore` package as long as this is not fully updated.
 - Add NOTE to README to wait for `dscore 1.7.0` (DONE)
 - Redocument anchors (DONE)
 - Table `itemnames_translate.tsv` in `gsedread` is outdated and needs to be updated (DONE)
 - Links to `gsed` lexicon items need to be updated to make appropriate matches to items from other instruments (critical for model 818_6). (DONE)
 - Update data reading scripts `assemble_data.R` and `edit_data.R` in `gsedscripts`. (DONE)
+- Rerun core 293_0 model, check edits, redocument, regenerate diagnostic plots, etc. Check that result is identical. (DONE)
+- Refit full 818_6 model (DONE, in general better ICC's, effect on D-score calculation is minor, six items were unmatched)
+- Extend itemtable and itembank with new instrument code `gl1` (LF, Phase 2 validation)) and `gs1` (SF Phase 2 validation) (DONE) 
+- Add updated tau estimates to `dscore::builtin_itembank` (DONE)
 
 ## To do
 
-- Rerun core 293_0 model, check edits, redocument, regenerate diagnostic plots, etc. Check that result is identical.
-- Refit full 818_6 model
-- Add updated tau estimates to `dscore::builtin_itembank`
 - Update to `dscore 1.7.0`
 - Phase I data need to be re-read and re-analysed after updating `itemnames_translate`
 - Scripts calling `gsedread::rename_vector()` or `gsedread::rename_variables()` need to be rerun after updating `itemnames_translate`
