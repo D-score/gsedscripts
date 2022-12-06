@@ -10,7 +10,7 @@
 #
 # SETS TWO ANCHOR ITEMS
 # 20: Lift head 45 degrees (Same as before)
-# 40: Pulls to stand (Replaces "Sits in stable position")
+# 40: Lying to sitting (Replaces "Sits in stable position")
 #
 # The script
 # 1. select LF and SF items
@@ -29,7 +29,11 @@
 # Run 293_0.R first
 #
 # Aug 12, 2022, 2022 SvB
-#
+# Update 20221201 SvB: Replaces incorrect gto labels
+#                      Changes: Upper anchor (gtogmd026) lying to sitting: 40
+# Update 20221202 SvB: Rerun model 818_6 with correct gto order
+# Update 20221205 SvB: Remove bad matches: by3cgd059, mdtgmd021, mdtlgd003, mdtsed005, teplgd031, teplgd034
+
 library(dplyr)
 library(ggplot2)
 library(fuzzyjoin)
@@ -39,25 +43,27 @@ if (!requireNamespace("dscore", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dscore needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dscore")
 }
-if (packageVersion("dscore") < "1.5.10") stop("Needs dscore 1.5.10")
+if (packageVersion("dscore") < "1.6.7") stop("Needs dscore 1.6.7")
 if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dmetric")
 }
-if (packageVersion("dmetric") < "0.64.0") stop("Needs dmetric 0.64.0 or higher")
+if (packageVersion("dmetric") < "0.64.2") stop("Needs dmetric 0.64.2 or higher")
 
 if (!requireNamespace("gseddata", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package gseddata needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/gseddata")
 }
 if (packageVersion("gseddata") < "1.9.0") stop("Needs gseddata 1.9.0 or higher")
+if (packageVersion("gsedread") < "0.8.0") stop("Needs gseddata 0.8.0 or higher")
 
 library("dmetric")
 library("gseddata")
 
-# get all data
-suppressWarnings(source("scripts/assemble_data.R"))
-source("scripts/edit_data.R")
+# run auxiliary scripts to read and process data from source
+if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
+source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
@@ -134,6 +140,8 @@ keepvars <- setdiff(colnames(data), remove_by3)
 data <- data[, keepvars]
 # 63684, 826
 
+# by3cgd059, mdtgmd021, mdtlgd003, mdtsed005, teplgd031, teplgd034
+
 # last data preparations
 data <- data %>% select(-c("ins", "keep", "joinid"))
 adm <- c("cohort", "cohortn", "subjid", "subjido", "agedays")
@@ -141,7 +149,7 @@ items <- setdiff(colnames(data), adm)
 varlist <- list(adm = adm, items = items)
 
 # 20: Lift head 45 degrees (gsed: ddigmd057, gsed2: gtogmd001)
-# 40: Pulls to stand (gsed: mdtgmd012, gsed2: gtogmd026)
+# 40: Lying to sitting (gsed: kdigmd031, gsed2: gtogmd026)
 anchor <- c(20, 40)
 names(anchor) <- gsedread::rename_vector(c("gtogmd001", "gtogmd026"), lexin = "gsed2", lexout = "gsed")
 
@@ -156,9 +164,15 @@ equatelist <- list(
 )
 
 # obtain difficulty estimates from model 293_0
-model0 <- readRDS("~/project/gsed/phase1/remodel/293_0/model.Rds")
+model0 <- readRDS("~/Project/gsed/phase1/20221201_remodel/293_0/model.Rds")
 b_fixed <- dmetric::get_diff(model0$fit)
 names(b_fixed) <- gsedread::rename_vector(names(b_fixed), lexin = "gsed2", lexout = "gsed")
+
+# Added 20221205
+# remove constraint on by3cgd059, mdtgmd021, mdtlgd003, mdtsed005, teplgd031, teplgd034
+items_takeout <- c("by3cgd059", "mdtgmd021", "mdtlgd003", "mdtsed005", "teplgd031", "teplgd034")
+b_fixed <- b_fixed[!names(b_fixed) %in% items_takeout]
+data[data$cohort %in% c("GSED-BGD", "GSED-PAK", "GSED-TZA"), items_takeout] <- NA
 
 # set prior_mean and prior_sd
 use_new <- TRUE
@@ -178,12 +192,15 @@ model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     anchors = anchor,
                     data_package = "")
 
-# Store and reload model
-path <- file.path("~/project/gsed/phase1/remodel", model_name)
+# Store
+path <- file.path("~/Project/gsed/phase1/20221201_remodel", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
+
+# Reload
 model <- readRDS(file.path(path, "model.Rds"))
+data <- readRDS(file.path(path, "data.Rds"))
 
 # Plot figures
 theme_set(theme_light())
@@ -200,6 +217,11 @@ r <- plot_dmodel(data = data,
 # statistics
 with(model$item_fit, table(outfit<1.2 & infit<1.2))
 
+# compare with previous 818_6 model
+old_path <- file.path("~/Project/gsed/phase1/remodel", model_name)
+old_model <- readRDS(file.path(old_path, "model.Rds"))
+with(old_model$item_fit, table(outfit<1.2 & infit<1.2))
+
 # check equivalence of tau with model 293_0
 ib0 <- cbind(key = "293_0", model0$itembank)
 ib1 <- cbind(key = "custom", model$itembank)
@@ -213,7 +235,7 @@ text(x = (tau_293_0 + tau_model)/2, y = tau_293_0 - tau_model, label = names(tau
 
 # export key to dscore package
 ib <- model$itembank %>%
-  mutate(key = "gsed2208",
+  mutate(key = "gsed2212",
          tau = round(tau, 2)) %>%
   select(key, item, tau)
 write.table(ib,
@@ -222,3 +244,12 @@ write.table(ib,
             sep = "\t",
             row.names = FALSE)
 
+# compare gsed2212 to gsed2208
+items <- ib$item
+tau2212 <- dscore::get_tau(items, key = "gsed2212", itembank = ib)
+tau2208 <- dscore::get_tau(items, key = "gsed2208")
+plot(tau2208, tau2212)
+abline(0,1)
+diff <- tau2212 - tau2208
+idx <- abs(diff) > 5
+text(x = tau2208[idx], y = tau2212[idx], label = names(tau2212)[idx])

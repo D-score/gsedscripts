@@ -3,7 +3,8 @@
 #
 # SETS TWO ANCHOR ITEMS
 # 20: Lift head 45 degrees (Same as before)
-# 40: Pulls to stand (Replaces "Sits in stable position")
+# 40: Moves from lying to sitting (Replaces "Sits in stable position")
+#
 # Effect: Compared to previous anchoring:
 # 1) D-score during the first year increases at slower rate
 # 2) D-score beyond 3 yrs increases at higher rate
@@ -37,6 +38,9 @@
 #
 # Aug 8, 2022, 2022 SvB
 # Edits Aug 10, 2022 SvB
+# Update 20221201 SvB: Replaces incorrect gto labels
+#                      Changes: Upper anchor (gtogmd026) lying to sitting: 40
+# Update 20221202 SvB: Rerun model 293_0 with correct gto order
 
 library(dplyr)
 library(ggplot2)
@@ -47,13 +51,13 @@ if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dmetric")
 }
-if (packageVersion("dmetric") < "0.63.1") stop("Needs dmetric 0.63.1")
-
+if (packageVersion("dmetric") < "0.64.2") stop("Needs dmetric 0.64.2")
 library("dmetric")
 
-# get all data
-suppressWarnings(source("scripts/assemble_data.R"))
-source("scripts/edit_data.R")
+# run auxiliary scripts to read and process data from source
+if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
+source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
@@ -95,7 +99,7 @@ data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
 # Result: 6838 records, 299 columns
 
 # 20: Lift head 45 degrees
-# 40: Pulls to stand
+# 40: Moves from lying to sitting
 anchor <- c(20, 40)
 names(anchor) <- c("gtogmd001", "gtogmd026")
 
@@ -108,7 +112,7 @@ model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     data_package = "")
 
 # Store and reload model
-path <- file.path("~/project/gsed/phase1/remodel", model_name)
+path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")

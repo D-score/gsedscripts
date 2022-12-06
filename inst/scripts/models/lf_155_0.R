@@ -12,18 +12,20 @@
 # The objective is to estimate difficulty parameters in the traditional way.
 #
 # May 29, 2022 SvB
+# Update 20221202 SvB: Rerun model lf_155_0 with correct gto order
 
 # If needed, install dmetric from GitHub
 if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dmetric")
 }
-if (packageVersion("dmetric") < "0.62.0") stop("Needs dmetric 0.62.0")
-
+if (packageVersion("dmetric") < "0.64.2") stop("Needs dmetric 0.64.2")
 library("dmetric")
 
-# get all data
-suppressWarnings(source("scripts/assemble_data.R"))
+# run auxiliary scripts to read and process data from source
+if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
+# source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
 # select instrument data and pre-process
 items <- colnames(work)[starts_with("gto", vars = colnames(work))]
@@ -55,7 +57,8 @@ model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     data_package = "")
 
 # Store and reload model
-path <- file.path("~/project/gsed/phase1/lf", model_name)
+path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
+if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 model <- readRDS(file.path(path, "model.Rds"))
 
