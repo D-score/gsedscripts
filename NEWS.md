@@ -1,3 +1,8 @@
+# gsedscripts 0.6.0
+
+* Updates modeling scripts
+* Updates reports that documents actions taken to solve LF item order problem
+
 # gsedscripts 0.5.0 
 
 * Adds document to log actions taken to solve the LF item order problem

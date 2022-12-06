@@ -1,7 +1,7 @@
 Package: gsedscripts
 Type: Package
 Title: Package with scripts and functions for GSED validation
-Version: 0.5.0
+Version: 0.6.0
 Author: Stef van Buuren
 Maintainer: Stef van Buuren <stef.vanbuuren@tno.nl>
 Description: Holdout for scripts and custom functions needed for the 
