@@ -1,0 +1,61 @@
+---
+title: "LF Item Order Fix"
+author: "Stef van Buuren"
+date: Dec 6, 2022
+format: html
+editor: visual
+---
+
+# Solution on LF Item Order Issue
+ 
+
+## Problem
+ 
+During the preparation of the software for the GSED Package I found persistent inconsistencies in the item labels of the GSED LF used in the Phase I validation study. With the help of Gareth, Michelle, Raghbir and others, it became gradually clear that the documentation and implementation were out of sync. As I understand it now, REDCAP implemented an older version of LF than documented. As a result, the labels of 34 out of 155 items did not match the administered item. The erroneous labels have been in the dscore package since May 30, 2022.
+ 
+This report is a sequel to my previous post last Thursday that alerted project members to the problem, and to my exchange with Tarun and Vanessa last Friday.
+ 
+## Impact
+ 
+The item label is a fundamental building block in the GSED project. Errors in item labels are contagious: Any action or analysis that depends on the item label being correct could be in error.
+ 
+The following parts are not affected:
+
+- The numeric values from the GSED core model 293_0 using the combined SF and LF;
+- The reference population `phase1` used to calculate the DAZ;
+- The 18-item ECDI extension (since that depends on SF).
+ 
+The following parts are affected:
+
+- `dscore`: The central tables `builtin_itemtable` (item names and labels) and the `builtin_itembank` (item names and tau’s);
+- `dscore`: default key `gsed2208` is invalid for all instruments, except `gpa` (GSED SF);
+- `gsedread`: Item name construction used for reading the Phase 1 LF (BGD, PAK, TZA) in ` scripts/assemble_data.R` and `scripts/edit_data.R` is invalid;
+- `gsedread`: The translation between original, sequential, gsed and gsed2 lexicons (defined in `itemnames_translate.tsv`) is incorrect. Consequently, the function `rename_vector()` produces incorrect results.
+- `gsedscripts`: tau estimates from model 818_6 are invalid;
+- LF Phase 2 form: items per stream not sorted in difficulty.
+ 
+In general, results calculated from GSED SF are safe. Results calculated from GSED LF are safe if these do not depend on the item label being correct.
+ 
+## Actions taken
+ 
+- `gsedread` updated to 0.8.0 <https://github.com/D-score/gsedread/>
+- `dscore` updated to 1.7.0 <https://cran.r-project.org/package=dscore>
+- `gsedscripts` update to 0.6.0  <https://github.com/D-score/gsedscripts>
+- For detail, see <https://github.com/D-score/gsedscripts/blob/main/Rmd/Item_reorderings_action.qmd>
+- For detail on model 818_6: <https://github.com/D-score/gsedscripts/blob/main/Rmd/item_comparson_2208_2212.qmd>. The updated 818_6 model is better than to old version.
+ 
+## Recommendations
+ 
+- Update your packages `dscore`, `gsedread` and `gsedscripts`
+- Reread data with code `gto` (LF Phase I version) and reanalyse. If you used only `gpa` (SF Phase I version) you are safe.
+- Rerun code using `gsedread::rename_vector()`
+- Update any copies made or extracted from `dscore::builtin_itemtable`,  `dscore::builtin_itembank` or `gsedread::itemnames_translates.tsv`
+- D-scores calculated from non-GSED instruments after May 30, 2022 need to be recalculated (differences are small in general) 
+- Decide on what to do with LF Phase 2 item order. If necessary, update the corresponding `gl1` instrument code entries in `dscore`
+- Perform extra check on new codes `gs1` (GSED SHORT FORM V1, to be released) and `gl1` (GSED LONG FORM V1, to be released)
+- Be sure to keep the item code and item label in sync. Give a form a version number when item order changes, update both documentation and form, install bookkeeper role to approve the master version
+
+## Conclusions
+
+Fortunately, we caught and addressed the problem ahead of our first release. I assume that the above actions correct the problem. Although I have no wish to spend another week on this problem, please let me know if there are any further issues that need attention.
+ 
