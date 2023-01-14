@@ -1,3 +1,7 @@
+# gsedscripts 0.7.0
+
+* Make scripts better useable as external call
+
 # gsedscripts 0.6.0
 
 * Updates modeling scripts
