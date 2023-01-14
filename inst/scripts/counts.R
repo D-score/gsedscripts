@@ -7,8 +7,8 @@
 #
 # Nov 18 2022, SvB
 
-library(fuzzyjoin)
-library(dplyr)
+require(fuzzyjoin)
+require(dplyr)
 fn <- system.file("scripts/assemble_data.R", package = "gsedscripts")
 suppressWarnings(source(fn))
 

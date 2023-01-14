@@ -34,10 +34,10 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
 }
 if (packageVersion("gsedread") < "0.8.0") stop("Needs gsedread 0.8.0")
 
-library(gsedread)
-library(dplyr)
-library(tidyr)
-library(tibble)
+require(gsedread)
+require(dplyr)
+require(tidyr)
+require(tibble)
 
 # read data
 sf_f <- read_sf("fixed") %>% mutate(adm = "fixed")
