@@ -22,8 +22,10 @@ library("dscore")
 library("dmetric")
 
 # get all data
-suppressWarnings(source("scripts/assemble_data.R"))
-source("scripts/edit_data.R")
+# run auxiliary scripts to read and process data from source
+if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
+source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "subjid", "agedays", "ins")
