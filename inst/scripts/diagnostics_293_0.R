@@ -226,3 +226,22 @@ wb <- createWorkbook()
 addWorksheet(wb, sheet = "keys", gridLines = TRUE)
 writeData(wb, sheet = "keys", x = dataset, rowNames = FALSE, withFilter = TRUE)
 saveWorkbook(wb, file = file.path(path, paste0("key_match.xlsx")), overwrite = TRUE)
+
+
+# --- compare itemfit
+m <- model$item_fit
+
+summary(m[m$item %in% items_lf, ])
+summary(m[m$item %in% items_sf, ])
+
+m$insf <- m$item %in% items_sf
+
+m2 <- m[m$outfit < 2, ]
+# plot
+library(ggplot2)
+g <- ggplot(data = m2, aes(x = infit, y = outfit, colour = insf)) +
+  geom_abline(slope = 1, intercept = 0, col = "grey") +
+  geom_point() +
+  theme_light()
+g
+
