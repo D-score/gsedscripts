@@ -26,6 +26,9 @@
 #
 # May 29, 2022 SvB
 
+# register existing objects
+existing <- ls()
+
 # If needed, install gsedread from GitHub
 pkg <- "gsedread"
 if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
@@ -151,6 +154,6 @@ uni <- work %>%
 cat("Number of rows in work    ", nrow(work), "\n")
 cat("Number of unique records  ", nrow(uni), "\n")
 
-# clean up
-rm(list = setdiff(ls(), "work"))
+# clean up, keep work
+rm(list = setdiff(ls(), c("work", existing)))
 cat("The combined data are in object `work`.\n")
