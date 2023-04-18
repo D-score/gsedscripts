@@ -1,3 +1,7 @@
+# gsedscripts 0.8.0
+
+* Adds source scripts for document that explain scoring GSED LF and GSED SF
+
 # gsedscripts 0.7.0
 
 * Make scripts better useable as external call
