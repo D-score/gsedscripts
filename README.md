@@ -9,7 +9,7 @@
 The gsedscripts repository contains script to read, process, model,
 summarise and plot data collected within the [Global Scales of Early
 Development
-project](https://www.who.int/publications/i/item/WHO-MSD-GSED-package-v1.0-2023)
+project](https://www.who.int/news/item/27-02-2023-who-rolls-out-new-holistic-way-to-measure-early-childhood-development)
 of the World Health Organisation (WHO).
 
 ## Acknowledgement
