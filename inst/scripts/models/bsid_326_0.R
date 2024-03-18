@@ -22,7 +22,8 @@ if (packageVersion("dmetric") < "0.62.0") stop("Needs dmetric 0.62.0")
 library("dmetric")
 
 # get all data
-suppressWarnings(source("scripts/assemble_data.R"))
+if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
 
 # select instrument data and pre-process
 items <- colnames(work)[starts_with("by3", vars = colnames(work))]
