@@ -1,3 +1,7 @@
+# gsedscripts 0.8.1
+
+* Changes path in source scripts for GSED SF and BSID so that it will run from any directory, as long as the R packages dmetric and gsedscript are installed on the user's machine.
+
 # gsedscripts 0.8.0
 
 * Adds source scripts for document that explain scoring GSED LF and GSED SF
