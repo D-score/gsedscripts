@@ -1,6 +1,7 @@
 # Diagnostic plots LF versus SF for fitted model
 # Prerequisites: Run the model first
 # Depends on gsed2 lexicon
+# 20240601 SvB: Rerun using dscore 1.8.8
 
 library(dplyr)
 library(dscore)
@@ -9,6 +10,8 @@ library(ggplot2)
 # Set and get data and model
 model_name <- "293_0"
 path <- file.path("~/project/gsed/phase1/remodel", model_name)
+path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
+path <- file.path("~/project/gsed/phase1/20240601", model_name)
 data <- readRDS(file.path(path, "data.Rds"))
 model <- readRDS(file.path(path, "model.Rds"))
 

@@ -23,6 +23,7 @@ library("dmetric")
 
 # run auxiliary scripts to read and process data from source
 if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+remotes::install_github("d-score/gsedscripts")
 suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
 
 # select instrument data and pre-process

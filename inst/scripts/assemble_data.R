@@ -21,10 +21,12 @@
 # 6. Include Rapid Short Form data
 # 7. Replace cat() by nicer testing statements, including a silencer
 # 8. When everything is polished, turn into function
+# 9. Synchronize adaptive data (20240326)
 # None of these issues is critical for modeling, so let's use this as
 # base data.
 #
 # May 29, 2022 SvB
+# Mar 26, 2024 SvB
 
 # register existing objects
 existing <- ls()

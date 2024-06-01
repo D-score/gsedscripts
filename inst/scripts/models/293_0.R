@@ -41,6 +41,7 @@
 # Update 20221201 SvB: Replaces incorrect gto labels
 #                      Changes: Upper anchor (gtogmd026) lying to sitting: 40
 # Update 20221202 SvB: Rerun model 293_0 with correct gto order
+# Check  20240601 SvB: Check model 293_0 with dscore 1.8.8 version
 
 library(dplyr)
 library(ggplot2)
@@ -113,6 +114,7 @@ model <- fit_dmodel(varlist = list(adm = adm, items = items),
 
 # Store and reload model
 path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
+path <- file.path("~/project/gsed/phase1/20240601", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
