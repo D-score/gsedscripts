@@ -1,7 +1,7 @@
 Package: gsedscripts
 Type: Package
 Title: Package with scripts and functions for GSED validation
-Version: 0.8.1
+Version: 0.9.0
 Author: Stef van Buuren
 Maintainer: Stef van Buuren <stef.vanbuuren@tno.nl>
 Description: Holdout for scripts and custom functions needed for the 
@@ -12,4 +12,4 @@ LazyData: true
 Imports: 
     remotes,
     utils
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1

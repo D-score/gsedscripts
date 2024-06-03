@@ -1,3 +1,11 @@
+# gsedscripts 0.9.0
+
+* Extends script `inst/script/fit_models.R` a refit using `dscore 1.8.8`
+* Adds script `inst/script/compare_algorithm.R` to compare models "20221201_remodel/293_0" and "20240601/293_0" using `dscore 1.8.8`
+* Adds script `inst/script/compare_models.R` to compare models "20221201_remodel/293_0" and "20240601/293_0" using the `dscore 1.8.8`
+* Extends script `inst/script/fit_phase1_references.R` with calculation of the healthy subsample references from the GSED key
+* Extends script `inst/script/fit_phase1_references.R` with calculation of the Dutch references from the GSED key
+
 # gsedscripts 0.8.1
 
 * Changes path in source scripts for GSED SF and BSID so that it will run from any directory, as long as the R packages dmetric and gsedscript are installed on the user's machine.
