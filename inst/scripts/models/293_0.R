@@ -78,7 +78,7 @@ long <- work %>%
   select(all_of(adm), all_of(items))
 
 # Fuzzy match on gsed_id and agedays
-# We allow for a 4-day difference between the SF, LF and BSID measurement
+# We allow for a 4-day difference between the SF and LF measurement
 # Double fuzzy match, lf, sf keep all records
 sf <- long %>%
   filter(ins == "sf") %>%
@@ -86,6 +86,7 @@ sf <- long %>%
 lf <- long %>%
   filter(ins == "lf") %>%
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
+
 data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
                                           max_dist = 4, distance_col = "dist") %>%
   mutate(
