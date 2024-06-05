@@ -19,7 +19,7 @@ library(dscore)
 library(dplyr)
 library(gsedread)
 
-gsed <- builtin_itembank %>%
+gsed <- builtin_itembank |>
   filter(key == "gsed1912")
 dim(gsed)
 
@@ -27,9 +27,9 @@ model <- readRDS(file.path("~/project/gsed/phase1/joint/818_17_joint_fixed/model
 gsed22 <- model$itembank
 
 ## compare gsed2206 - gsed1912
-comb <- gsed22 %>%
-  left_join(gsed, by = "item") %>%
-  rename(gsed2206 = tau.x, gsed1912 = tau.y) %>%
+comb <- gsed22 |>
+  left_join(gsed, by = "item") |>
+  rename(gsed2206 = tau.x, gsed1912 = tau.y) |>
   mutate(tau_mean = (gsed2206 + gsed1912) / 2,
          tau_diff = gsed2206 - gsed1912)
 with(comb, plot(gsed2206, gsed1912)); abline(0,1)
@@ -38,7 +38,7 @@ with(comb, plot(tau_mean, tau_diff)); abline(h=0)
 
 # show item labels for subset of large deviations
 bound <- 3
-csub <- comb %>%
+csub <- comb |>
   filter(abs(tau_diff) > bound)
 with(csub, plot(tau_mean, tau_diff, type = "n"));
 abline(h = c(-bound, bound), lty = 3);

@@ -29,16 +29,16 @@ suppressWarnings(source("scripts/assemble_data.R"))
 items <- colnames(work)[starts_with("by3", vars = colnames(work))]
 adm <- c("cohort", "subjid", "agedays", "country", "study")
 vars <- c(adm, items)
-data <- work %>%
-  filter(ins == "bsid") %>%
+data <- work |>
+  filter(ins == "bsid") |>
   rename(
     subjid = gsed_id,
-    agedays = age) %>%
+    agedays = age) |>
   mutate(
     cohort = strtrim(subjid, 7),
     country = strtrim(file, 3),
     study = recode(country, "ban" = "BGD", "pak" = "PAK", "tza" = "TZA"),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
   select(all_of(vars))
 
 col_manual = c("BGD" = "#D93F46", "PAK" = "#489033", "TZA" = "#47A1D8")
@@ -48,10 +48,10 @@ ds <- dscore::dscore(data = data, items = items,
                      xname = "agedays", xunit = "days", key = "gsed")
 ds <- bind_cols(data[, adm], ds)
 
-reference <- dscore::get_reference(population = "gcdg") %>%
-  mutate(month = .data$age * 12) %>%
-  select(.data$month, .data$SDM2:.data$SDP2) %>%
-  filter(.data$month <= 60) %>%
+reference <- dscore::get_reference(population = "gcdg") |>
+  mutate(month = .data$age * 12) |>
+  select(.data$month, .data$SDM2:.data$SDP2) |>
+  filter(.data$month <= 60) |>
   pivot_longer(names_to = "centile", values_to = "d", cols = -.data$month)
 
 theme_set(theme_light())

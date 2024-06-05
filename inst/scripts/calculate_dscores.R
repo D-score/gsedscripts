@@ -38,7 +38,7 @@ work <- work[, !dup]
 dup2 <- duplicated(items)
 items <- items[!dup2]
 
-data <- work %>%
+data <- work |>
   mutate(
     subjido = gsed_id,
     agedays = age,
@@ -46,9 +46,9 @@ data <- work %>%
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     country = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
-  drop_na(agedays) %>%
-  filter(ins %in% c("lf", "sf")) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
+  drop_na(agedays) |>
+  filter(ins %in% c("lf", "sf")) |>
   select(all_of(adm), all_of(items))
 
 # # We do not need custom itembank anymore since dscore 1.5.4, but just keep these statement to go back if needed
@@ -71,8 +71,8 @@ ds <- dscore(data = data,
              xunit = "days")
 md <- cbind(data, ds)
 
-r <- builtin_references %>%
-  filter(pop == "phase1" & age < 3.5) %>%
+r <- builtin_references |>
+  filter(pop == "phase1" & age < 3.5) |>
   select(age, SDM2, SD0, SDP2)
 
 col_manual = c("GSED-BGD" = "#D93F46", "GSED-PAK" = "#489033", "GSED-TZA" = "#47A1D8")

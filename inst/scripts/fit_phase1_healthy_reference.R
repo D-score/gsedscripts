@@ -51,8 +51,8 @@ cn <- colnames(work)
 items <- cn[starts_with(c("gpa", "gto"), vars = cn)]
 items_lf <- cn[starts_with("gto", vars = cn)]
 items_sf <- cn[starts_with("gpa", vars = cn)]
-data <- work %>%
-  filter(adm == "fixed" & ins %in% c("lf", "sf")) %>%
+data <- work |>
+  filter(adm == "fixed" & ins %in% c("lf", "sf")) |>
   mutate(
     subjido = gsed_id,
     agedays = age,
@@ -62,8 +62,8 @@ data <- work %>%
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
     across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L,
-                                   .default = NA_integer_))) %>%
-  tidyr::drop_na(agedays) %>%
+                                   .default = NA_integer_))) |>
+  tidyr::drop_na(agedays) |>
   dplyr::select(all_of(adm), all_of(items))
 
 # Read healthy subset ID's from onedrive
@@ -72,21 +72,21 @@ taz_ids <- file.path(onedrive, "Pemba Validation/TZA Healthy SAMPLE IDS  19Nov20
 pak_ids <- file.path(onedrive, "Pakistan Validation/PAKISTAN Healthy SAMPLE IDS 16Nov2021.xlsx")
 ban_ids <- file.path(onedrive, "Bangladesh Validation/BANGLADESH Healthy SAMPLE IDS 16Nov2021.xlsx")
 
-healthy_taz <- readxl::read_excel(taz_ids) %>%
-  rename(GSED_ID = gsed_id) %>%
-  mutate(COUNTRY = "Tanzania") %>%
+healthy_taz <- readxl::read_excel(taz_ids) |>
+  rename(GSED_ID = gsed_id) |>
+  mutate(COUNTRY = "Tanzania") |>
   select(GSED_ID, HEALTHY)
-healthy_pak <- readxl::read_excel(pak_ids, sheet = "List of IDs") %>%
-  rename(GSED_ID = `GSED ID`) %>%
+healthy_pak <- readxl::read_excel(pak_ids, sheet = "List of IDs") |>
+  rename(GSED_ID = `GSED ID`) |>
   mutate(COUNTRY = "Pakistan",
-         HEALTHY = ifelse(is.na(`Healthy subsample`), 0, 1)) %>%
+         HEALTHY = ifelse(is.na(`Healthy subsample`), 0, 1)) |>
   select(GSED_ID, HEALTHY)
-healthy_ban <- readxl::read_excel(ban_ids, sheet = "List OF IDs") %>%
+healthy_ban <- readxl::read_excel(ban_ids, sheet = "List OF IDs") |>
   mutate(HEALTHY = ifelse(Sample_Type == "Healthy", 1, 0),
-         COUNTRY = "Bangladesh") %>%
+         COUNTRY = "Bangladesh") |>
   select(GSED_ID, HEALTHY)
 
-healthy <-  rbind(healthy_taz, healthy_pak, healthy_ban) %>%
+healthy <-  rbind(healthy_taz, healthy_pak, healthy_ban) |>
   rename(subjido = GSED_ID,
          healthy = HEALTHY) |>
   mutate(healthy = as.integer(healthy),
@@ -252,11 +252,11 @@ dd$mu <- predict(mod1, newdata = dd)
 # Conclusion: Happy with round3 estimates for prior (very close to round4)
 
 # process and save PHASE1 reference table, weeks 2-168
-reference <- reference %>%
+reference <- reference |>
   mutate(day = x,
          week = day / 7,
          month = round(12 * day / 365.25, 3),
-         year = round(day / 365.25, 4)) %>%
+         year = round(day / 365.25, 4)) |>
   dplyr::select(day, week, month, year, mu, sigma, nu, tau)
 
 write.table(reference,

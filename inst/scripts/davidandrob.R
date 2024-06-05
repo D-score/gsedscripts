@@ -16,8 +16,8 @@ p1m <- data.frame(qp = qp, month = rep(1, length(qp)), p = adp_dutch(1/12))
 p15m <- data.frame(qp = qp, month = rep(15, length(qp)), p = adp_dutch(15/12))
 p24m <- data.frame(qp = qp, month = rep(24, length(qp)), p = adp_dutch(24/12))
 
-dataprior <- rbind(p1m, p15m, p24m) %>%
-  mutate(month = as.factor(month)) %>%
+dataprior <- rbind(p1m, p15m, p24m) |>
+  mutate(month = as.factor(month)) |>
   dplyr::filter(p > 0.00001)
 
 p <- ggplot(dataprior, aes(qp, p, group = month)) +
@@ -89,9 +89,9 @@ plotdata <- expand.grid(x = qp, item = items,
                         type = c("Prior", "Posterior"),
                         person = c("David", "Rob"))
 plotdata <- cbind(plotdata, y = c(as.vector(david), as.vector(rob)))
-plotdata <- plotdata %>%
+plotdata <- plotdata |>
   dplyr::filter(y > 0.00001)
-# %>% filter(person == "Rob")
+# |> filter(person == "Rob")
 
 p <- ggplot(plotdata, aes(x = x, y = y)) +
   theme(legend.position = "bottom") +

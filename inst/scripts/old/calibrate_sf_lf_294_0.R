@@ -29,8 +29,8 @@ d_lf <- dscore(data = data,
                xname = "agedays",
                xunit = "days",
                population = "gcdg",
-               relevance = c(-20, 5)) %>%
-  rename(d_lf = d, daz_lf = daz) %>%
+               relevance = c(-20, 5)) |>
+  rename(d_lf = d, daz_lf = daz) |>
   select(all_of(c("a", "d_lf", "daz_lf")))
 
 # go SF
@@ -41,11 +41,11 @@ d_sf <- dscore(data = data,
                xname = "agedays",
                xunit = "days",
                population = "gcdg",
-               relevance = c(-20, 5)) %>%
-  rename(d_sf = d, daz_sf = daz) %>%
+               relevance = c(-20, 5)) |>
+  rename(d_sf = d, daz_sf = daz) |>
   select(all_of(c("d_sf", "daz_sf")))
 
-joined <- cbind(study = data$study, d_lf, d_sf) %>%
+joined <- cbind(study = data$study, d_lf, d_sf) |>
   mutate(
     d_mean = (d_lf + d_sf) / 2,
     d_diff = (d_lf - d_sf),
@@ -220,8 +220,8 @@ dev.off()
 
 # create xls type of file for manual inspection
 
-d <- df %>%
-  rename(gsed2 = item) %>%
+d <- df |>
+  rename(gsed2 = item) |>
   select(-instrument)
 dataset <- data.frame(
   gsed = gsedread::rename_vector(d$gsed2, lexin = "gsed2", lexout = "gsed"),

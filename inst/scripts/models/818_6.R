@@ -68,8 +68,8 @@ source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
 items <- colnames(work)[starts_with(c("gpa", "gto", "by3"), vars = colnames(work))]
-long <- work %>%
-  filter(adm == "fixed") %>%
+long <- work |>
+  filter(adm == "fixed") |>
   mutate(
     subjido = gsed_id,
     agedays = age,
@@ -78,24 +78,24 @@ long <- work %>%
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
     joinid = subjid * 10,
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
-  drop_na(agedays) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
+  drop_na(agedays) |>
   select(all_of(adm), all_of(items))
 
 # Fuzzy match on gsed_id and agedays
 # We allow for a 4-day difference between the SF, LF and BSID measurement
 # Double fuzzy match, lf, sf, bsid, keep all records
-sf <- long %>%
-  filter(ins == "sf") %>%
+sf <- long |>
+  filter(ins == "sf") |>
   select(all_of(adm), items[all_of(starts_with("gpa", vars = items))])
-lf <- long %>%
-  filter(ins == "lf") %>%
+lf <- long |>
+  filter(ins == "lf") |>
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
-bsid <- long %>%
-  filter(ins == "bsid") %>%
+bsid <- long |>
+  filter(ins == "bsid") |>
   select(all_of(adm), items[all_of(starts_with("by3", vars = items))])
 joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
-                                          max_dist = 4, distance_col = "dist") %>%
+                                          max_dist = 4, distance_col = "dist") |>
   mutate(
     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
     cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
@@ -103,10 +103,10 @@ joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
     joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
     agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
     ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) %>%
+  ) |>
   select(all_of(adm), any_of(items))
 data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"),
-                                        max_dist = 4, distance_col = "dist") %>%
+                                        max_dist = 4, distance_col = "dist") |>
   mutate(
     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
     cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
@@ -114,7 +114,7 @@ data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"
     joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
     agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
     ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) %>%
+  ) |>
   select(all_of(adm), any_of(items))
 # Result: 6838 records, 625 columns
 
@@ -143,7 +143,7 @@ data <- data[, keepvars]
 # by3cgd059, mdtgmd021, mdtlgd003, mdtsed005, teplgd031, teplgd034
 
 # last data preparations
-data <- data %>% select(-c("ins", "keep", "joinid"))
+data <- data |> select(-c("ins", "keep", "joinid"))
 adm <- c("cohort", "cohortn", "subjid", "subjido", "agedays")
 items <- setdiff(colnames(data), adm)
 varlist <- list(adm = adm, items = items)
@@ -234,9 +234,9 @@ plot(x = (tau_293_0 + tau_model)/2, y = tau_293_0 - tau_model, type = "n")
 text(x = (tau_293_0 + tau_model)/2, y = tau_293_0 - tau_model, label = names(tau_model))
 
 # export key to dscore package
-ib <- model$itembank %>%
+ib <- model$itembank |>
   mutate(key = "gsed2212",
-         tau = round(tau, 2)) %>%
+         tau = round(tau, 2)) |>
   select(key, item, tau)
 write.table(ib,
             file = file.path(path, "itembank.txt"),

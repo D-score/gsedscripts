@@ -46,10 +46,10 @@ data <- clean_data(data)
 # keep persons with infit <= 3 and outfit <= 3
 # pre-selected by old_model
 old_model2 <- load_model("598_17_64951_fixed")
-keep_person <- old_model2$person_fit %>%
-  mutate(keep = TRUE) %>%
+keep_person <- old_model2$person_fit |>
+  mutate(keep = TRUE) |>
   select(subjid, agedays, keep)
-data$visit <- left_join(data$visit, keep_person, by = c("subjid", "agedays")) %>%
+data$visit <- left_join(data$visit, keep_person, by = c("subjid", "agedays")) |>
   mutate(keep = ifelse(cohortn %in% c(60, 61, 67), TRUE, keep))
 data <- as.lean(subset(as.data.frame(data), keep == TRUE))
 

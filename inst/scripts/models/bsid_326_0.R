@@ -29,23 +29,23 @@ suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedsc
 items <- colnames(work)[starts_with("by3", vars = colnames(work))]
 adm <- c("cohort", "subjid", "agedays", "country", "study")
 vars <- c(adm, items)
-data <- work %>%
-  filter(ins == "bsid") %>%
+data <- work |>
+  filter(ins == "bsid") |>
   rename(
     subjid = gsed_id,
-    agedays = age) %>%
+    agedays = age) |>
   mutate(
     cohort = strtrim(subjid, 7),
     country = strtrim(file, 3),
     study = recode(country, "ban" = "BGD", "pak" = "PAK", "tza" = "TZA"),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
   select(all_of(vars))
 
 # remove orphans
 orphans <- c("by3cgd001", "by3cgd086", "by3cgd087", "by3cgd088", "by3cgd089",
              "by3cgd090", "by3cgd091", "by3fmd063", "by3fmd064", "by3fmd065",
              "by3fmd066", "by3gmd002")
-data <- data %>%
+data <- data |>
   select(-all_of(orphans))
 items <- colnames(data)[starts_with("by3", vars = colnames(data))]
 

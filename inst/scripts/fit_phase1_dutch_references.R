@@ -10,8 +10,8 @@ NLdscores <- dscore(data = NLD,
                     xname = "agedays",
                     xunit = "days")
 
-datin <- NLdscores %>%
-  filter(daz > -6 & daz < 6) %>%
+datin <- NLdscores |>
+  filter(daz > -6 & daz < 6) |>
   drop_na()
 
 # adapted from dmetric::fit_reference()
@@ -68,15 +68,15 @@ reference$nu <- round(reference$nu, 4)
 reference$tau <- round(reference$tau, 3)
 
 # process and save PHASE1 reference table, weeks 2-168
-reference <- reference %>%
+reference <- reference |>
   mutate(day = x,
          week = day / 7,
          month = round(12 * day / 365.25, 3),
-         year = round(day / 365.25, 4)) %>%
+         year = round(day / 365.25, 4)) |>
   dplyr::select(day, week, month, year, mu, sigma, nu, tau)
 
 refdutch <-
-  reference %>%
+  reference |>
   mutate(pop = "dutch",
          P3 = dscore:::qBCT(0.03, mu, sigma, nu, tau),
          P10 = dscore:::qBCT(0.10, mu, sigma, nu, tau),
@@ -93,15 +93,15 @@ refdutch <-
          age = year
   )
 
-refphase1 <- get_reference() %>% mutate(pop = "phase1")
+refphase1 <- get_reference() |> mutate(pop = "phase1")
 
-refs <- bind_rows(refdutch, refphase1) %>%
+refs <- bind_rows(refdutch, refphase1) |>
   pivot_longer(P3:P97, names_to = "percentile", values_to = "D")
 
 ggplot()+
-  geom_line(data=refs %>% filter(pop == "phase1"), aes(x = age, y = D, group = percentile), color = "#377EB8", size = 1)+
+  geom_line(data=refs |> filter(pop == "phase1"), aes(x = age, y = D, group = percentile), color = "#377EB8", size = 1)+
   theme_light()+
-  geom_line(data=refs %>% filter(pop == "dutch"), aes(x = age, y = D, group = percentile), color = "#E41A1C", size = 1)
+  geom_line(data=refs |> filter(pop == "dutch"), aes(x = age, y = D, group = percentile), color = "#E41A1C", size = 1)
 
 
 

@@ -45,7 +45,7 @@ require(tidyr, quietly = TRUE, warn.conflicts = FALSE)
 require(tibble, quietly = TRUE, warn.conflicts = FALSE)
 
 # read data
-sf_f <- read_sf("fixed") %>% mutate(adm = "fixed")
+sf_f <- read_sf("fixed") |> mutate(adm = "fixed")
 lf_f <- read_lf("fixed")
 bsid <- read_bsid()
 sf_a <- read_sf("adaptive")
@@ -67,91 +67,91 @@ colnames(bsid) <- rename_vector(colnames(bsid), contains = "bsid_")
 # a matter of simply deleting one of the administration.
 # Here, we do a more rough approach that removes all gsed_id's with two
 # administrations.
-sf_a_wide <- sf_a %>%
+sf_a_wide <- sf_a |>
   pivot_wider(id_cols = gsed_id, names_from = item, values_from = scores)
 # cat("Total number of unique gsed_id's: ", length(unique(sf_a_wide$gsed_id)), "\n")
 
 # count administrations with not-duplicate gsed_id
-nodup <- sf_a %>%
-  dplyr::group_by(gsed_id, item) %>%
-  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+nodup <- sf_a |>
+  dplyr::group_by(gsed_id, item) |>
+  dplyr::summarise(n = dplyr::n(), .groups = "drop") |>
   dplyr::filter(n == 1L)
 # cat("Total number of unique gsed_id's with one administration: ", length(unique(nodup$gsed_id)), "\n")
 
 gsed_id_nodup <- unique(nodup$gsed_id)
 gsed_id_nodup <- setdiff(gsed_id_nodup, c("20-GSED-0816", "17-GSED-1402"))
 idx <- sf_a$gsed_id %in% gsed_id_nodup
-sf_a_wide <- sf_a[idx, ] %>%
-  mutate(age = as.double(dov - dob)) %>%
+sf_a_wide <- sf_a[idx, ] |>
+  mutate(age = as.double(dov - dob)) |>
   pivot_wider(id_cols = c(file, gsed_id, location, age),
-              names_from = item, values_from = scores) %>%
+              names_from = item, values_from = scores) |>
   mutate(vist_type = 8L,
          ins = "sf",
          adm = "adaptive")
 
 # -- bind SF fixed and SF adaptive wide, remove duplicates
-sf <- bind_rows(sf_f, sf_a_wide) %>%
-  distinct(gsed_id, age, vist_type, .keep_all = TRUE) %>%
-  mutate(ins = "sf") %>%
-  arrange(gsed_id, age, vist_type) %>%
+sf <- bind_rows(sf_f, sf_a_wide) |>
+  distinct(gsed_id, age, vist_type, .keep_all = TRUE) |>
+  mutate(ins = "sf") |>
+  arrange(gsed_id, age, vist_type) |>
   select(gsed_id, age, vist_type, ins, adm, file, parent_id:location,
-         date, caregiver, ah01:m03, gpalac001:gpaclc139) %>%
+         date, caregiver, ah01:m03, gpalac001:gpaclc139) |>
   as_tibble()
 dim(sf)
 
 # -- transform adaptive LF into wide format
-lf_a_wide <- lf_a %>%
+lf_a_wide <- lf_a |>
   pivot_wider(id_cols = gsed_id, names_from = item, values_from = scores)
 # cat("Total number of unique gsed_id's: ", length(unique(lf_a_wide$gsed_id)), "\n")
 
 # count administrations with not-duplicate gsed_id
-nodup <- lf_a %>%
-  dplyr::group_by(gsed_id, item) %>%
-  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+nodup <- lf_a |>
+  dplyr::group_by(gsed_id, item) |>
+  dplyr::summarise(n = dplyr::n(), .groups = "drop") |>
   dplyr::filter(n == 1L)
 # cat("Total number of unique gsed_id's with one administration: ", length(unique(nodup$gsed_id)), "\n")
 
 gsed_id_nodup <- unique(nodup$gsed_id)
 # gsed_id_nodup <- setdiff(gsed_id_nodup, c("20-GSED-0816", "17-GSED-1402"))
 idx <- lf_a$gsed_id %in% gsed_id_nodup
-lf_a_wide <- lf_a[idx, ] %>%
-  mutate(age = as.double(dov - dob)) %>%
+lf_a_wide <- lf_a[idx, ] |>
+  mutate(age = as.double(dov - dob)) |>
   pivot_wider(id_cols = c(file, gsed_id, location, age, adm),
-              names_from = item, values_from = scores) %>%
+              names_from = item, values_from = scores) |>
   mutate(vist_type = 8L,
          ins = "lf")
 
 # -- bind LF fixed and LF adaptive wide, remove duplicates
-lf <- bind_rows(lf_f, lf_a_wide) %>%
-  distinct(gsed_id, age, vist_type, .keep_all = TRUE) %>%
-  mutate(ins = "lf") %>%
-  arrange(gsed_id, age, vist_type) %>%
+lf <- bind_rows(lf_f, lf_a_wide) |>
+  distinct(gsed_id, age, vist_type, .keep_all = TRUE) |>
+  mutate(ins = "lf") |>
+  arrange(gsed_id, age, vist_type) |>
   dplyr::select(gsed_id, age, vist_type, ins, adm, file, parent_id:location,
-                date, caregiver, ah01:m03, gtogmd001:gtofmd054) %>%
+                date, caregiver, ah01:m03, gtogmd001:gtofmd054) |>
   as_tibble()
 dim(lf)
 
 # Add administrative variable to bsid data
-bsid <- bsid %>%
+bsid <- bsid |>
   mutate(
     ins = "bsid",
     vist_type = 1L
   )
 
 # bind LF, SF and BSID, add number of responses per instrument
-work <- bind_rows(sf, lf, bsid) %>%
-  arrange(gsed_id, age, ins, worker_code) %>%
+work <- bind_rows(sf, lf, bsid) |>
+  arrange(gsed_id, age, ins, worker_code) |>
   mutate(n_sf = rowSums(!is.na(across(starts_with("gpa")))),
          n_lf = rowSums(!is.na(across(starts_with("gto")))),
-         n_bsid = rowSums(!is.na(across(starts_with("by3"))))) %>%
+         n_bsid = rowSums(!is.na(across(starts_with("by3"))))) |>
   dplyr::select(gsed_id, age, ins, worker_code, adm, vist_type, n_sf:n_bsid,
                 file:caregiver, age_adj_premature, ah01:m03,
                 gpalac001:by3gmd072)
 
 # check whether combination gsed_id, age, ins, worker_code is unique
-uni <- work %>%
-  group_by(gsed_id, age, ins, worker_code) %>%
-  summarise(n_gp = dplyr::n(), .groups = "drop") %>%
+uni <- work |>
+  group_by(gsed_id, age, ins, worker_code) |>
+  summarise(n_gp = dplyr::n(), .groups = "drop") |>
   filter(n_gp == 1L)
 cat("Number of rows in work    ", nrow(work), "\n")
 cat("Number of unique records  ", nrow(uni), "\n")

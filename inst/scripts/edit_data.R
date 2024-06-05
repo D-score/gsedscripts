@@ -26,7 +26,7 @@ work <- select(work, -gpamoc008)
 # gtolgd007	23,47	B7. Vocalises when spoken to
 # gtolgd008	35,25	B8. Repeats syllables
 
-work <- work %>%
+work <- work |>
   mutate(gtolgd002 = ifelse(age > 182, NA, gtolgd002),
          gtolgd003 = ifelse(age > 182, NA, gtolgd003),
          gtolgd004 = ifelse(age > 182, NA, gtolgd004),

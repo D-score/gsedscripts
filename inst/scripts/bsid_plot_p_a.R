@@ -29,23 +29,23 @@ suppressWarnings(source("scripts/assemble_data.R"))
 items <- colnames(work)[starts_with("by3", vars = colnames(work))]
 adm <- c("cohort", "subjid", "agedays", "country")
 vars <- c(adm, items)
-data <- work %>%
-  filter(ins == "bsid") %>%
+data <- work |>
+  filter(ins == "bsid") |>
   rename(
     subjid = gsed_id,
-    agedays = age) %>%
+    agedays = age) |>
   mutate(
     cohort = strtrim(subjid, 7),
     country = strtrim(file, 3),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
   select(all_of(vars))
 
 # define data for rug plot
-data_rug <- data %>%
+data_rug <- data |>
   pivot_longer(cols = starts_with("by3"), names_to = "item", values_to = "value",
-               values_drop_na = TRUE) %>%
-  mutate(study = recode(country, "ban" = "BGD", "pak" = "PAK", "tza" = "TZA")) %>%
-  mutate(agemos = agedays / 365.25 * 12) %>%
+               values_drop_na = TRUE) |>
+  mutate(study = recode(country, "ban" = "BGD", "pak" = "PAK", "tza" = "TZA")) |>
+  mutate(agemos = agedays / 365.25 * 12) |>
   select(item, value, agemos, study)
 
 # permute rows in data_rug
@@ -53,13 +53,13 @@ idx <- sample(1:nrow(data_rug))
 data_rug <- data_rug[idx, ]
 
 # calculate summary statistics
-pass <- data_rug %>%
-  mutate(agegp = cut(agemos, breaks = seq(0, 42, 1))) %>%
-  group_by(item, study, agegp) %>%
+pass <- data_rug |>
+  mutate(agegp = cut(agemos, breaks = seq(0, 42, 1))) |>
+  group_by(item, study, agegp) |>
   summarise(p = round(100 * mean(value, na.rm = TRUE)),
             a = mean(agemos, na.rm = TRUE),
-            n = n()) %>%
-  ungroup() %>%
+            n = n()) |>
+  ungroup() |>
   left_join(dscore::get_itemtable(), by = "item")
 
 col_manual = c("BGD" = "#D93F46", "PAK" = "#489033", "TZA" = "#47A1D8")

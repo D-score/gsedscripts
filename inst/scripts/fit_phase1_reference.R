@@ -33,8 +33,8 @@ cn <- colnames(work)
 items <- cn[starts_with(c("gpa", "gto"), vars = cn)]
 items_lf <- cn[starts_with("gto", vars = cn)]
 items_sf <- cn[starts_with("gpa", vars = cn)]
-data <- work %>%
-  filter(adm == "fixed") %>%
+data <- work |>
+  filter(adm == "fixed") |>
   mutate(
     subjido = gsed_id,
     agedays = age,
@@ -42,8 +42,8 @@ data <- work %>%
     cohort = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
-  drop_na(agedays) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
+  drop_na(agedays) |>
   dplyr::select(all_of(adm), all_of(items))
 
 # Set custom itembank
@@ -76,8 +76,8 @@ d_sf <- dscore(data = dplyr::filter(data, ins == "sf"),
                xunit = "days",
                prior_mean = mean_name,
                population = population)
-datin <- bind_rows(d_lf, d_sf) %>%
-  filter(daz > -6 & daz < 6) %>%
+datin <- bind_rows(d_lf, d_sf) |>
+  filter(daz > -6 & daz < 6) |>
   drop_na()
 
 # adapted from dmetric::fit_reference()
@@ -175,11 +175,11 @@ summary(mod3)
 # Conclusion: Happy with round2 estimates for prior (very close to round3)
 
 # process and save PHASE1 reference table, weeks 2-168
-reference <- reference %>%
+reference <- reference |>
   mutate(day = x,
          week = day / 7,
          month = round(12 * day / 365.25, 3),
-         year = round(day / 365.25, 4)) %>%
+         year = round(day / 365.25, 4)) |>
   dplyr::select(day, week, month, year, mu, sigma, nu, tau)
 
 write.table(reference,

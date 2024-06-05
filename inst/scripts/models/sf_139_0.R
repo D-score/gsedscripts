@@ -30,17 +30,17 @@ suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedsc
 items <- colnames(work)[starts_with("gpa", vars = colnames(work))]
 adm <- c("cohort", "subjid", "agedays", "country", "study")
 vars <- c(adm, items)
-data <- work %>%
-  filter(ins == "sf") %>%
+data <- work |>
+  filter(ins == "sf") |>
   rename(
     subjid = gsed_id,
-    agedays = age) %>%
+    agedays = age) |>
   mutate(
     cohort = strtrim(subjid, 7),
     country = strtrim(file, 3),
     study = recode(country, "ban" = "BGD", "pak" = "PAK", "tza" = "TZA"),
     across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_)),
-    gpamoc008 = recode(gpamoc008, "1" = 0L, "0" = 1L, .default = NA_integer_)) %>%
+    gpamoc008 = recode(gpamoc008, "1" = 0L, "0" = 1L, .default = NA_integer_)) |>
   select(all_of(vars))
 
 # The following anchors do not work

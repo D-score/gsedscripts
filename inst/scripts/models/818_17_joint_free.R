@@ -11,15 +11,15 @@ library(dmetric)
 
 adm <- c("cohort", "cohortn", "subjid", "subjido", "agedays", "ins")
 items <- colnames(work)[starts_with(c("gpa", "gto", "by3"), vars = colnames(work))]
-new <- work %>%
+new <- work |>
   mutate(
     subjido = gsed_id,
     agedays = age + (ins == "lf") * 0.1 + (ins == "bsid") * 0.2,
     cohort = strtrim(subjido, 7),
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
-  drop_na(agedays) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
+  drop_na(agedays) |>
   select(all_of(adm), all_of(items))
 colnames(new) <- c(adm, rename_vector(items, "gsed2", "gsed"))
 dup <- duplicated(colnames(new))  # remove some by3 columns because of duplication

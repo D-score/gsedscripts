@@ -38,8 +38,8 @@ suppressWarnings(source("scripts/assemble_data.R"))
 # select instrument data and pre-process, select fixed administration
 adm <- c("cohort", "cohortn", "study", "subjid", "joinid", "agedays", "ins")
 items <- colnames(work)[starts_with(c("gpa", "gto", "by3"), vars = colnames(work))]
-long <- work %>%
-  filter(adm == "fixed") %>%
+long <- work |>
+  filter(adm == "fixed") |>
   mutate(
     subjido = gsed_id,
     agedays = age,
@@ -49,24 +49,24 @@ long <- work %>%
     joinid = subjid * 10,
     country = strtrim(file, 3),
     study = recode(country, "ban" = "GSED-BGD", "pak" = "GSED-PAK", "tza" = "GSED-TZA"),
-    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) %>%
-  drop_na(agedays) %>%
+    across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
+  drop_na(agedays) |>
   select(all_of(adm), all_of(items))
 
 # Fuzzy match on gsed_id and agedays
 # We allow for a 4-day difference between the SF, LF and BSID measurement
 # Double fuzzy match, lf, sf, bsid, keep all records
-sf <- long %>%
-  filter(ins == "sf") %>%
+sf <- long |>
+  filter(ins == "sf") |>
   select(all_of(adm), items[all_of(starts_with("gpa", vars = items))])
-lf <- long %>%
-  filter(ins == "lf") %>%
+lf <- long |>
+  filter(ins == "lf") |>
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
-bsid <- long %>%
-  filter(ins == "bsid") %>%
+bsid <- long |>
+  filter(ins == "bsid") |>
   select(all_of(adm), items[all_of(starts_with("by3", vars = items))])
 joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
-                                         max_dist = 4, distance_col = "dist") %>%
+                                         max_dist = 4, distance_col = "dist") |>
   mutate(
     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
     cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
@@ -75,10 +75,10 @@ joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
     joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
     agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
     ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) %>%
+  ) |>
   select(all_of(adm), any_of(items))
 data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"),
-                                         max_dist = 4, distance_col = "dist") %>%
+                                         max_dist = 4, distance_col = "dist") |>
   mutate(
     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
     cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
@@ -87,7 +87,7 @@ data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"
     joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
     agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
     ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) %>%
+  ) |>
   select(all_of(adm), any_of(items))
 # Result: 6838 records, 627 columns
 
@@ -100,7 +100,7 @@ n2 <- suppressWarnings(sapply(tabs, min))
 n2[is.infinite(n2)] <- 0L
 t2 <- n2 >= min_cat
 items <- items[t1 & t2]
-data <- data %>%
+data <- data |>
   select(all_of(adm), all_of(items))
 
 # Fit the Rasch model

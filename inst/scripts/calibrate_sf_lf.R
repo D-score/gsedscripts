@@ -17,11 +17,11 @@ lfm <- readRDS(file.path("~/project/gsed/phase1/lf/155_0", "model.Rds"))
 # We allow for a one-day difference between the SF and LF measurement
 # Turn subjid into number to make fuzzyjoin work
 library(fuzzyjoin)
-sf <- sfm$beta_l %>%
-  mutate(id = 10L * as.integer(sub("-GSED-", "", subjid))) %>%
+sf <- sfm$beta_l |>
+  mutate(id = 10L * as.integer(sub("-GSED-", "", subjid))) |>
   select(id, agedays, study, a, d)
-lf <- lfm$beta_l %>%
-  mutate(id = 10L * as.integer(sub("-GSED-", "", subjid))) %>%
+lf <- lfm$beta_l |>
+  mutate(id = 10L * as.integer(sub("-GSED-", "", subjid))) |>
   select(id, agedays, study, a, d)
 joined <- fuzzyjoin::difference_left_join(sf, lf, by = c("id", "agedays"),
                                           max_dist = 1, distance_col = "dist")
@@ -30,7 +30,7 @@ joined <- fuzzyjoin::difference_left_join(sf, lf, by = c("id", "agedays"),
 # We stick to the class of *linear transforms* to correct for differences in
 # location and spread in the logits
 # d.x = SF logit; d.y = LF logit
-joined <- joined %>%
+joined <- joined |>
   mutate(sum1 = d.x + d.y,
          dif1 = d.x - d.y,
          sum2 = -1.673 + 0.774 * d.x + d.y,
