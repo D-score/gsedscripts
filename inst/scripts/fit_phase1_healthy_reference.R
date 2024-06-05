@@ -204,18 +204,6 @@ reference$tau <- round(reference$tau, 3)
 
 # Calculate the parts for the prior mean function `dscore:::count_mu_phase1()`
 
-# Results round 1:
-# Round 1 model
-# t[t1] <- suppressWarnings(24.226 + 24.057 * t[t1] + 8.996 * log(t[t1] + 0.2))
-# t[t2] <- suppressWarnings(18.012 - 9.561 * t[t2] + 62.214 * log(t[t2] + 0.92))
-# t[t3] <- suppressWarnings(63.0822 + 3.9134 * t[t3])
-#
-# Results round 2:
-# Count model: < 9MND: 20.5883 + 27.3376 t +  6.4254(t + 0.2)
-# Count model: > 9MND & < 3.5 YR: 14.63748 - 12.11774 t + 69.05463(t + 0.92)
-# Linear model: > 3.5 YRS: 61.37967 + 3.83513 t
-#
-
 # count < 9MND
 dd <- data.frame(
   x = reference$x / 365.25,
