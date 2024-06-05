@@ -1,3 +1,8 @@
+# gsedscripts 0.10.0
+
+* Adds script `inst/script/fit_phase1_healthy_references.R` to calculate new healthy references for the GSED key
+* Copies code for creating Dutch references for the GSED key into file `inst/script/fit_phase1_dutch_references.R`
+
 # gsedscripts 0.9.0
 
 * Extends script `inst/script/fit_models.R` a refit using `dscore 1.8.8`
