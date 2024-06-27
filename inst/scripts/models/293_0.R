@@ -72,7 +72,7 @@ long <- work |>
     cohort = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
-    joinid = subjid * 10,
+    joinid = subjid * 100,
     across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
   drop_na(agedays) |>
   select(all_of(adm), all_of(items))
@@ -87,40 +87,64 @@ lf <- long |>
   filter(ins == "lf") |>
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
 
-data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
-                                          max_dist = 4, distance_col = "dist")
-|>
-  mutate(
-    cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
-    cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
-    subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
-    joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
-    agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
-    ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) |>
-  select(all_of(adm), any_of(items))
-# Result: 6838 records, 299 columns
+# ## Outcommented 240626 SvB greedy method
+# # Fuzzy join, allowing for multiple rows per child, < 4 days
+# data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
+#                                           max_dist = 4, distance_col = "dist") |>
+#   mutate(
+#     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
+#     cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
+#     subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
+#     joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
+#     agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
+#     ins = ifelse(is.na(ins.x), ins.y, ins.x),
+#   ) |>
+#   select(all_of(adm), any_of(items))
+# # Result: 6838 records, 299 columns
+
+## SvB 20240626: Changed to slice(1L) to keep only the first record
+## Conservative method with only one record per child
+# Fuzzy join, allowing for one row per child, < 4 days
+sf_first <- sf |>
+  group_by(subjid) |>
+  slice(1L)
+lf_first <- lf |>
+  group_by(subjid) |>
+  slice(1L)
+data <- fuzzyjoin::difference_left_join(sf_first, lf_first,
+                                        by = c("joinid", "agedays"),
+                                        max_dist = 10, distance_col = "dist") |>
+  ungroup() |>
+  filter(!is.na(ins.y)) |>
+  rename(cohort = cohort.x, cohortn = cohortn.x, subjid = subjid.x,
+         agedays = agedays.x) |>
+  mutate(age = agedays / 365.25) |>
+  select(cohort, cohortn, subjid, agedays, age, ins.x, ins.y, any_of(items))
+# Result: 4161 records, 300 columns
 
 # 20: Lift head 45 degrees
 # 40: Moves from lying to sitting
 anchor <- c(20, 40)
 names(anchor) <- c("gtogmd001", "gtogmd026")
+varlist = list(adm = c("cohort", "cohortn", "subjid", "age", "agedays"),
+              items = items)
 
 # Fit the Rasch model
 model_name <- paste(length(items), "0", sep = "_")
-model <- fit_dmodel(varlist = list(adm = adm, items = items),
+model <- fit_dmodel(varlist = varlist,
                     data = data,
                     name = model_name,
                     anchors = anchor,
-                    data_package = "")
+                    data_package = "", verbose = TRUE)
 
 # Store and reload model
 path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
 path <- file.path("~/project/gsed/phase1/20240601", model_name)
+path <- file.path("~/project/gsed/phase1/20240624", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
-model <- readRDS(file.path(path, "model.Rds"))
+model_old <- readRDS(file.path(path, "model.Rds"))
 
 # Plot figures
 theme_set(theme_light())
