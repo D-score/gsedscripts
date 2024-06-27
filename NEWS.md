@@ -1,15 +1,19 @@
+# gsedscripts 0.11.0
+
+* Adds a new fuzzymatching method to `inst/scripts/counts.R` and `inst/scripts/293_0.R` that takes only the first LF, SF and BSID before matching. As a result, each row corresponds to a unique subjid (child). This does not use all data, but is much easier to explain and report. The impact of the method on the item difficulty estimates is negligible (r > 0.99).
+
 # gsedscripts 0.10.0
 
-* Adds script `inst/script/fit_phase1_healthy_references.R` to calculate new healthy references for the GSED key
-* Copies code for creating Dutch references for the GSED key into file `inst/script/fit_phase1_dutch_references.R`
+* Adds script `inst/scripts/fit_phase1_healthy_references.R` to calculate new healthy references for the GSED key
+* Copies code for creating Dutch references for the GSED key into file `inst/scripts/fit_phase1_dutch_references.R`
 
 # gsedscripts 0.9.0
 
-* Extends script `inst/script/fit_models.R` a refit using `dscore 1.8.8`
-* Adds script `inst/script/compare_algorithm.R` to compare models "20221201_remodel/293_0" and "20240601/293_0" using `dscore 1.8.8`
-* Adds script `inst/script/compare_models.R` to compare models "20221201_remodel/293_0" and "20240601/293_0" using the `dscore 1.8.8`
-* Extends script `inst/script/fit_phase1_references.R` with calculation of the healthy subsample references from the GSED key
-* Extends script `inst/script/fit_phase1_references.R` with calculation of the Dutch references from the GSED key
+* Extends script `inst/scripts/fit_models.R` a refit using `dscore 1.8.8`
+* Adds script `inst/scripts/compare_algorithm.R` to compare models "20221201_remodel/293_0" and "20240601/293_0" using `dscore 1.8.8`
+* Adds script `inst/scripts/compare_models.R` to compare models "20221201_remodel/293_0" and "20240601/293_0" using the `dscore 1.8.8`
+* Extends script `inst/scripts/fit_phase1_references.R` with calculation of the healthy subsample references from the GSED key
+* Extends script `inst/scripts/fit_phase1_references.R` with calculation of the Dutch references from the GSED key
 
 # gsedscripts 0.8.1
 
