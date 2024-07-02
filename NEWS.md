@@ -1,3 +1,7 @@
+# gsedscripts 0.12.0
+
+* Replaces `fit_phase1_healthy_reference.R` by `fit_preliminary_standards.R`
+
 # gsedscripts 0.11.0
 
 * Adds a new fuzzymatching method to `inst/scripts/counts.R` and `inst/scripts/293_0.R` that takes only the first LF, SF and BSID before matching. As a result, each row corresponds to a unique subjid (child). This does not use all data, but is much easier to explain and report. The impact of the method on the item difficulty estimates is negligible (r > 0.99).
