@@ -1,18 +1,18 @@
-# Fits "phase1_health" growth reference to the fixed LF and SF D-scores
-# on a healthy subsample of GSED.
-#
-# Estimates the reference table from the Phase I healthy subsample
+# Fits "preliminary_standards" developmental reference to the fixed LF
+# and SF D-scores on a healthy GSED subsample
 #
 # Changes made relative to 20240523 reference table (dscore 1.8.7):
 # - D-score estimation uses the new model 20240601 with correct scale factor
 # - Calculates the D-score for SF and LF separately (not combined)
 # - Tunes the GAMSLSS model to fit the healthy subsample
+# - The complete LF sample for Bangladesh
 #
 # Assumed environmental variable: ONEDRIVE_GSED
 # Non-standard packages: dmetric (private)
 #
 # 20240523 IE ("phase1_healthy", part of dscore 1.8.7)
-# 20240606 SvB
+# 20240606 SvB ("preliminary_standards), dscore 1.9.0
+# 20240702 SvB preliminary_standards, dscore 1.9.3
 
 # Load standard packages
 library(dplyr)
@@ -38,7 +38,7 @@ if (!requireNamespace("gsedscripts", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package gsedscripts needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/gsedscripts")
 }
-if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+if (packageVersion("gsedscripts") < "0.11.0") stop("Needs gsedscripts 0.11.0")
 
 # Get the LF and SF data
 suppressWarnings(source(system.file("scripts/assemble_data.R",
@@ -67,7 +67,7 @@ data <- work |>
   dplyr::select(all_of(adm), all_of(items))
 
 # Read healthy subset ID's from onedrive
-onedrive <- Sys.getenv("ONEDRIVE_GSED")
+onedrive <- file.path("~/Project/gsed/data/OneDrive_1_17-5-2022")
 taz_ids <- file.path(onedrive, "Pemba Validation/TZA Healthy SAMPLE IDS  19Nov2021.xlsx")
 pak_ids <- file.path(onedrive, "Pakistan Validation/PAKISTAN Healthy SAMPLE IDS 16Nov2021.xlsx")
 ban_ids <- file.path(onedrive, "Bangladesh Validation/BANGLADESH Healthy SAMPLE IDS 16Nov2021.xlsx")
@@ -118,19 +118,21 @@ data_hss <- data |>
 # How many healthy cases do we have?
 table(data_hss$ins, data_hss$cohort)
 # GSED-BGD GSED-PAK GSED-TZA
-# lf      709      616      891
+# lf      771      616      891
 # sf      777      625      893
 
 # Set prior_mean and prior_sd
 use_new <- TRUE
+# data_hss$pm_old <- dscore:::count_mu_phase1(data_hss$agedays/365.25)
+# data_hss$pm_new <- dscore:::count_mu_phase1_healthy(data_hss$agedays/365.25)
 data_hss$pm_old <- dscore:::count_mu_phase1(data_hss$agedays/365.25)
-data_hss$pm_new <- dscore:::count_mu_phase1_healthy(data_hss$agedays/365.25)
+data_hss$pm_new <- dscore:::count_mu_preliminary_standards(data_hss$agedays/365.25)
 data_hss$sd <- rep(5, nrow(data_hss))
 mean_name <- ifelse(use_new, "pm_new", "pm_old")
 sd_name   <- ifelse(use_new, "sd", "sd")
 
 # Set population
-population <- ifelse(use_new, "phase1_healthy", "phase1")
+population <- ifelse(use_new, "preliminary_standards", "phase1")
 
 # Calculate LF and SF D-scores separately for hss
 lf_hss <- data_hss |>
@@ -239,7 +241,7 @@ dd$mu <- predict(mod1, newdata = dd)
 
 # Conclusion: Happy with round3 estimates for prior (very close to round4)
 
-# process and save PHASE1 reference table, weeks 2-168
+# process and save preliminary_standards table, weeks 2-168
 reference <- reference |>
   mutate(day = x,
          week = day / 7,
@@ -248,10 +250,10 @@ reference <- reference |>
   dplyr::select(day, week, month, year, mu, sigma, nu, tau)
 
 write.table(reference,
-            file = "phase1_healthy.txt",
+            file = "preliminary_standards.txt",
             quote = FALSE,
             sep = "\t",
             row.names = FALSE)
 
-# transfer phase1.txt to dscore package
+# transfer preliminary_standards.txt to dscore package
 
