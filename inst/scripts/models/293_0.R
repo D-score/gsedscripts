@@ -42,6 +42,7 @@
 #                      Changes: Upper anchor (gtogmd026) lying to sitting: 40
 # Update 20221202 SvB: Rerun model 293_0 with correct gto order
 # Check  20240601 SvB: Check model 293_0 with dscore 1.8.8 version
+# Update 20240703 SvB: Using more LF data, 4323 records
 
 library(dplyr)
 library(ggplot2)
@@ -120,7 +121,7 @@ data <- fuzzyjoin::difference_left_join(sf_first, lf_first,
          agedays = agedays.x) |>
   mutate(age = agedays / 365.25) |>
   select(cohort, cohortn, subjid, agedays, age, ins.x, ins.y, any_of(items))
-# Result: 4161 records, 300 columns
+# Result: 4323 records, 300 columns
 
 # 20: Lift head 45 degrees
 # 40: Moves from lying to sitting
@@ -140,7 +141,7 @@ model <- fit_dmodel(varlist = varlist,
 # Store and reload model
 path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
 path <- file.path("~/project/gsed/phase1/20240601", model_name)
-path <- file.path("~/project/gsed/phase1/20240624", model_name)
+path <- file.path("~/project/gsed/phase1/20240703", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
@@ -153,7 +154,7 @@ r <- plot_dmodel(data = data,
                  model = model,
                  path = path,
                  col.manual = col.manual,
-                 ref_name = "phase1",
+                 ref_name = "preliminary_standards",
                  maxy = 100,
                  xlim = c(0, 85),
                  xbreaks = seq(0, 100, 10))
