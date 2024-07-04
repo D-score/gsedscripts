@@ -42,7 +42,7 @@
 #                      Changes: Upper anchor (gtogmd026) lying to sitting: 40
 # Update 20221202 SvB: Rerun model 293_0 with correct gto order
 # Check  20240601 SvB: Check model 293_0 with dscore 1.8.8 version
-# Update 20240703 SvB: Using more LF data, 4323 records
+# Update 20240703 SvB: Using more LF data, 4374 records
 
 library(dplyr)
 library(ggplot2)
@@ -116,12 +116,12 @@ data <- fuzzyjoin::difference_left_join(sf_first, lf_first,
                                         by = c("joinid", "agedays"),
                                         max_dist = 10, distance_col = "dist") |>
   ungroup() |>
-  filter(!is.na(ins.y)) |>
+  # filter(!is.na(ins.y)) |>
   rename(cohort = cohort.x, cohortn = cohortn.x, subjid = subjid.x,
          agedays = agedays.x) |>
   mutate(age = agedays / 365.25) |>
   select(cohort, cohortn, subjid, agedays, age, ins.x, ins.y, any_of(items))
-# Result: 4323 records, 300 columns
+# Result: 4374 records, 300 columns
 
 # 20: Lift head 45 degrees
 # 40: Moves from lying to sitting
