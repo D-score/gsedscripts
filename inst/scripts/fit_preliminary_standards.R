@@ -121,6 +121,9 @@ table(data_hss$ins, data_hss$cohort)
 # lf      771      616      891
 # sf      777      625      893
 
+# How many unique chilren are in the healthy subsample?
+length(unique(data_hss$subjid))
+
 # Set prior_mean and prior_sd
 use_new <- TRUE
 # data_hss$pm_old <- dscore:::count_mu_phase1(data_hss$agedays/365.25)
@@ -175,7 +178,7 @@ hss$x   <- round(hss$a * 365.25)
 hss$t.x <- tx(hss$x)
 
 # Fit the model
-fit <- lms(y = t.y, x = x, trans.x = FALSE, families = c("BCT", "BCCG", "NO"),
+fit <- lms(y = t.y, x = x, trans.x = FALSE, families = c("BCT"),
            mu.df = 5, sigma.df = 4, data = hss)
 
 # chosen model BCT: mu.df = 7, sigma.df = 6, nu.df = 2, tau.df = 2
