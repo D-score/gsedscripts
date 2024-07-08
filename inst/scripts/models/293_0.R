@@ -43,6 +43,7 @@
 # Update 20221202 SvB: Rerun model 293_0 with correct gto order
 # Check  20240601 SvB: Check model 293_0 with dscore 1.8.8 version
 # Update 20240703 SvB: Using more LF data, 4374 records
+# Update 202407: SvB: Just a rename to collect all July 2024 model results
 
 library(dplyr)
 library(ggplot2)
@@ -53,11 +54,11 @@ if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dmetric")
 }
-if (packageVersion("dmetric") < "0.64.2") stop("Needs dmetric 0.64.2")
+if (packageVersion("dmetric") < "0.67.0") stop("Needs dmetric 0.67.0")
 library("dmetric")
 
 # run auxiliary scripts to read and process data from source
-if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+if (packageVersion("gsedscripts") < "0.13.0") stop("Needs gsedscripts 0.13.0")
 suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
 source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
@@ -87,21 +88,6 @@ sf <- long |>
 lf <- long |>
   filter(ins == "lf") |>
   select(all_of(adm), items[all_of(starts_with("gto", vars = items))])
-
-# ## Outcommented 240626 SvB greedy method
-# # Fuzzy join, allowing for multiple rows per child, < 4 days
-# data <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
-#                                           max_dist = 4, distance_col = "dist") |>
-#   mutate(
-#     cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
-#     cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
-#     subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
-#     joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
-#     agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
-#     ins = ifelse(is.na(ins.x), ins.y, ins.x),
-#   ) |>
-#   select(all_of(adm), any_of(items))
-# # Result: 6838 records, 299 columns
 
 ## SvB 20240626: Changed to slice(1L) to keep only the first record
 ## Conservative method with only one record per child
@@ -142,6 +128,7 @@ model <- fit_dmodel(varlist = varlist,
 path <- file.path("~/project/gsed/phase1/20221201_remodel", model_name)
 path <- file.path("~/project/gsed/phase1/20240601", model_name)
 path <- file.path("~/project/gsed/phase1/20240703", model_name)
+path <- file.path("~/project/gsed/phase1/202407", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
