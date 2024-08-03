@@ -2,7 +2,7 @@
 # Final model 818_6 using GSED-BGD, GSED-PAK and GSED-TZA as model core.
 # 818 items, 6 equates
 #
-# This solution becomes the gsed2208 key in dscore.
+# This solution becomes the gsed2407 key in dscore.
 #
 # The tau values of models 293_0 and 818_6 are equivalent
 # except for minor deviations (< 0.1) in by1ppd028, iyomoc039, croclc024 and
@@ -18,7 +18,7 @@
 # 3. combines with the data used to form the 807_17 model
 # 4. fits Rasch model
 # 5. produces the diagnostic plots
-# 6. compares D-score by age and tau-estimates to gsed2206
+# 6. compares D-score by age and tau-estimates to gsed2212
 #
 # Dependencies
 # Assumed environmental variable: ONEDRIVE_GSED
@@ -33,6 +33,7 @@
 #                      Changes: Upper anchor (gtogmd026) lying to sitting: 40
 # Update 20221202 SvB: Rerun model 818_6 with correct gto order
 # Update 20221205 SvB: Remove bad matches: by3cgd059, mdtgmd021, mdtlgd003, mdtsed005, teplgd031, teplgd034
+# Update 20240708 SvB: Update with dscore 1.9.3
 
 library(dplyr)
 library(ggplot2)
@@ -43,12 +44,12 @@ if (!requireNamespace("dscore", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dscore needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dscore")
 }
-if (packageVersion("dscore") < "1.6.7") stop("Needs dscore 1.6.7")
+if (packageVersion("dscore") < "1.9.3") stop("Needs dscore 1.9.3")
 if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
   if (answer) remotes::install_github("d-score/dmetric")
 }
-if (packageVersion("dmetric") < "0.64.2") stop("Needs dmetric 0.64.2 or higher")
+if (packageVersion("dmetric") < "0.67.0") stop("Needs dmetric 0.67.0 or higher")
 
 if (!requireNamespace("gseddata", quietly = TRUE) && interactive()) {
   answer <- askYesNo(paste("Package gseddata needed. Install from GitHub?"))
@@ -61,7 +62,7 @@ library("dmetric")
 library("gseddata")
 
 # run auxiliary scripts to read and process data from source
-if (packageVersion("gsedscripts") < "0.5.0") stop("Needs gsedscripts 0.5.0")
+if (packageVersion("gsedscripts") < "0.13.0") stop("Needs gsedscripts 0.13.0")
 suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
 source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
@@ -77,14 +78,11 @@ long <- work |>
     cohort = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
     cohortn = as.integer(strtrim(subjido, 2)) + 100L,
     subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
-    joinid = subjid * 10,
+    joinid = subjid * 100,
     across(all_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
   drop_na(agedays) |>
   select(all_of(adm), all_of(items))
 
-# Fuzzy match on gsed_id and agedays
-# We allow for a 4-day difference between the SF, LF and BSID measurement
-# Double fuzzy match, lf, sf, bsid, keep all records
 sf <- long |>
   filter(ins == "sf") |>
   select(all_of(adm), items[all_of(starts_with("gpa", vars = items))])
@@ -94,34 +92,51 @@ lf <- long |>
 bsid <- long |>
   filter(ins == "bsid") |>
   select(all_of(adm), items[all_of(starts_with("by3", vars = items))])
-joined <- fuzzyjoin::difference_full_join(sf, lf, by = c("joinid", "agedays"),
-                                          max_dist = 4, distance_col = "dist") |>
-  mutate(
-    cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
-    cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
-    subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
-    joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
-    agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
-    ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) |>
-  select(all_of(adm), any_of(items))
-data <- fuzzyjoin::difference_full_join(joined, bsid, by = c("joinid", "agedays"),
-                                        max_dist = 4, distance_col = "dist") |>
-  mutate(
-    cohort = ifelse(is.na(cohort.x), cohort.y, cohort.x),
-    cohortn = ifelse(is.na(cohortn.x), cohortn.y, cohortn.x),
-    subjid = ifelse(is.na(subjid.x), subjid.y, subjid.x),
-    joinid = ifelse(is.na(joinid.x), joinid.y, joinid.x),
-    agedays = ifelse(is.na(agedays.x), agedays.y, agedays.x),
-    ins = ifelse(is.na(ins.x), ins.y, ins.x),
-  ) |>
-  select(all_of(adm), any_of(items))
-# Result: 6838 records, 625 columns
+
+join_method <- "onematch_10"
+
+sf_first <- sf |>
+  group_by(subjid) |>
+  slice(1L)
+lf_first <- lf |>
+  group_by(subjid) |>
+  slice(1L)
+bsid_first <- bsid |>
+  group_by(subjid) |>
+  slice(1L)
+
+data <- fuzzyjoin::difference_left_join(sf_first, lf_first,
+                                        by = c("joinid", "agedays"),
+                                        max_dist = 10, distance_col = "dist") |>
+  ungroup() |>
+  rename(cohort = cohort.x, cohortn = cohortn.x, subjid = subjid.x,
+         agedays = agedays.x, joinid = joinid.x) |>
+  mutate(age = agedays / 365.25) |>
+  select(c("cohort", "cohortn", "subjid", "joinid", "agedays", "ins.x", "ins.y"), any_of(items))
+# data: 4374 records, 301 columns
+
+data <- fuzzyjoin::difference_left_join(data, bsid_first,
+                                        by = c("joinid", "agedays"),
+                                        max_dist = 10, distance_col = "dist") |>
+  ungroup() |>
+  rename(cohort = cohort.x, cohortn = cohortn.x, subjid = subjid.x,
+         agedays = agedays.x, joinid = joinid.x) |>
+  mutate(age = agedays / 365.25) |>
+  select(c("cohort", "cohortn", "subjid", "agedays", "ins.x", "ins.y"), any_of(items))
+# data: 4374 records (=children), 626 columns
+
+cat("dim(data", dim(data), "\n")
+
+# number of duplo measurements
+has_lf <- apply(!is.na(select(data, items[all_of(starts_with("gto", vars = items))])), 1, any)
+has_sf <- apply(!is.na(select(data, items[all_of(starts_with("gpa", vars = items))])), 1, any)
+has_bsid <- apply(!is.na(select(data, items[all_of(starts_with("by3", vars = items))])), 1, any)
 
 # renaming into gsed naming schema
 # 18 duplicates 18 by3: we keep the first occurrence in the data
 # which contain LF or SF version responses
-colnames(data) <- c(adm, rename_vector(items, "gsed2", "gsed"))
+colnames(data) <- c("cohort", "cohortn", "subjid", "agedays", "ins.x", "ins.y",
+                    rename_vector(items, "gsed2", "gsed"))
 new_data <- data[, !duplicated(colnames(data))]
 
 # bind rows from gseddata in 807_17 model
@@ -133,17 +148,18 @@ old_data <- as.data.frame(old_lean)
 
 # select only by3 items that are in the 807 model
 data <- bind_rows(new_data, old_data)
+# 61220, 1085
 all_by3 <- colnames(data)[starts_with(c("by3"), vars = colnames(data))]
 keep_by3 <- old_model$items[starts_with("by3", vars = old_model$items)]
 remove_by3 <- setdiff(all_by3, keep_by3)
 keepvars <- setdiff(colnames(data), remove_by3)
 data <- data[, keepvars]
-# 63684, 826
+# 61220, 826
 
 # by3cgd059, mdtgmd021, mdtlgd003, mdtsed005, teplgd031, teplgd034
 
 # last data preparations
-data <- data |> select(-c("ins", "keep", "joinid"))
+data <- data |> select(-c("ins.x", "ins.y", "keep"))
 adm <- c("cohort", "cohortn", "subjid", "subjido", "agedays")
 items <- setdiff(colnames(data), adm)
 varlist <- list(adm = adm, items = items)
@@ -176,11 +192,11 @@ data[data$cohort %in% c("GSED-BGD", "GSED-PAK", "GSED-TZA"), items_takeout] <- N
 
 # set prior_mean and prior_sd
 use_new <- TRUE
-data$pm <- dscore:::count_mu_phase1(data$agedays/365.25)
+data$pm <- dscore:::count_mu_preliminary_standards(data$agedays/365.25)
 data$sd <- rep(5, nrow(data))
-mean_name <- ifelse(use_new, ".phase1", ".gcdg")
-sd_name   <- ifelse(use_new, "sd", "sd")
-population <- ifelse(use_new, "phase1", "gcdg")
+# mean_name <- ifelse(use_new, ".phase1", ".gcdg")
+# sd_name   <- ifelse(use_new, "sd", "sd")
+# population <- ifelse(use_new, "phase1", "gcdg")
 
 # Fit the Rasch model
 model_name <- paste(length(items), "6", sep = "_")
@@ -193,7 +209,9 @@ model <- fit_dmodel(varlist = list(adm = adm, items = items),
                     data_package = "")
 
 # Store
-path <- file.path("~/Project/gsed/phase1/20221201_remodel", model_name)
+# path <- file.path("~/Project/gsed/phase1/20221201_remodel", model_name)
+# model_name <- "818_6"
+path <- file.path("~/Project/gsed/phase1/202407", model_name)
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
 saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
@@ -209,7 +227,7 @@ r <- plot_dmodel(data = data,
                  model = model,
                  path = path,
                  col.manual = col.manual,
-                 ref_name = "phase1",
+                 ref_name = "preliminary_standards",
                  maxy = 100,
                  xlim = c(0, 100),
                  xbreaks = seq(0, 100, 10))
@@ -218,7 +236,8 @@ r <- plot_dmodel(data = data,
 with(model$item_fit, table(outfit<1.2 & infit<1.2))
 
 # compare with previous 818_6 model
-old_path <- file.path("~/Project/gsed/phase1/remodel", model_name)
+# old_path <- file.path("~/Project/gsed/phase1/remodel", model_name)
+old_path <- file.path("~/Project/gsed/phase1/20221201_remodel", model_name)
 old_model <- readRDS(file.path(old_path, "model.Rds"))
 with(old_model$item_fit, table(outfit<1.2 & infit<1.2))
 
@@ -235,7 +254,7 @@ text(x = (tau_293_0 + tau_model)/2, y = tau_293_0 - tau_model, label = names(tau
 
 # export key to dscore package
 ib <- model$itembank |>
-  mutate(key = "gsed2212",
+  mutate(key = "gsed2407",
          tau = round(tau, 2)) |>
   select(key, item, tau)
 write.table(ib,
@@ -244,12 +263,12 @@ write.table(ib,
             sep = "\t",
             row.names = FALSE)
 
-# compare gsed2212 to gsed2208
+# compare gsed2407 to gsed2212
 items <- ib$item
-tau2212 <- dscore::get_tau(items, key = "gsed2212", itembank = ib)
-tau2208 <- dscore::get_tau(items, key = "gsed2208")
-plot(tau2208, tau2212)
+tau2407 <- dscore::get_tau(items, key = "gsed2407", itembank = ib)
+tau2212 <- dscore::get_tau(items, key = "gsed2212")
+plot(tau2212, tau2407)
 abline(0,1)
-diff <- tau2212 - tau2208
+diff <- tau2407 - tau2212
 idx <- abs(diff) > 5
-text(x = tau2208[idx], y = tau2212[idx], label = names(tau2212)[idx])
+text(x = tau2212[idx], y = tau2407[idx], label = names(tau2407)[idx])
