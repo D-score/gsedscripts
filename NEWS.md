@@ -1,6 +1,11 @@
+# gsedscripts 0.14.0
+
+* Adds `Rmd/20240802_logit.Rmd` to demonstrate that logit and D-score scales are consistent for LF and SF, but not for other instruments
+* Adds new procedure `inst/script/models/by3_extension.R` to link BSID-III under fixing SF/LF tau estimates to those in model 293_0, leading to consistent logit and D-score scale for BSID-III
+
 # gsedscripts 0.13.0
 
-* Perform updates of model 293_0 using additional LF data for 
+* Perform updates of model 293_0 using additional LF data for BGD
 
 # gsedscripts 0.12.0
 
