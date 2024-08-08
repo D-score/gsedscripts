@@ -1,0 +1,163 @@
+---
+title: "D-score versus Logit-scale"
+author: "Stef van Buuren"
+date: "2024-08-02"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 6)
+# library(dmetric)
+```
+
+## Background
+
+We look into differences between the Logit and D-score scales. The D-score is a linear transformation of the Logit scale. We therefore expect that
+
+- D-score and Logit are linearly related, so should lay on a line
+- SEM(D-score) and SEM(Logit) are proportional
+
+## Milestones data
+
+```{r milestones}
+library(dscore)
+
+data <- milestones
+dim(data)
+```
+
+## Calculate both metrics - MILESTONES
+
+```{r}
+# D-score
+ds <- dscore(data = data, xname = "agedays", xunit = "days")
+head(ds)
+
+# Logit
+dl <- dscore(data = data, xname = "agedays", xunit = "days", metric = "logit")
+head(dl)
+```
+
+## Control plots - MILESTONES
+
+```{r}
+# Plots
+betas <- builtin_keys[builtin_keys$key == "gsed2406", c("intercept", "slope")]
+plot(x = dl$d, y = ds$d, cex = 0.4, pch = 19,
+     xlab = "D-score (logit)", ylab = "D-score (dscore)",
+     main = "D-score (logit) vs D-score (dscore) MILESTONES")
+abline(coef = betas, col = "orange")
+plot(x = dl$sem, y = ds$sem, cex = 0.4, pch = 19,
+     xlab = "SEM (logit)", ylab = "SEM (dscore)",
+     main = "SEM (logit) vs SEM (dscore) MILESTONES")
+abline(0, betas[2], col = "orange")
+```
+
+## 293_0 Data
+
+```{r}
+path <- file.path("~/Project/gsed/phase1/202407/293_0")
+
+model <- readRDS(file.path(path, "model.Rds"))
+data <- readRDS(file.path(path, "data.Rds"))
+dim(data)
+```
+
+## Calculate both metrics - 293_0
+
+```{r}
+# D-score
+ds <- dscore(data = data, xname = "agedays", xunit = "days")
+head(ds)
+
+# Logit
+dl <- dscore(data = data, xname = "agedays", xunit = "days", metric = "logit")
+head(dl)
+```
+
+## Control plots - 293_0
+
+```{r}
+# Plots
+betas <- builtin_keys[builtin_keys$key == "gsed2406", c("intercept", "slope")]
+plot(x = dl$d, y = ds$d, cex = 0.4, pch = 19,
+     xlab = "D-score (logit)", ylab = "D-score (dscore)",
+     main = "D-score (logit) vs D-score (dscore) 293_0")
+abline(coef = betas, col = "orange")
+plot(x = dl$sem, y = ds$sem, cex = 0.4, pch = 19,
+     xlab = "SEM (logit)", ylab = "SEM (dscore)",
+     main = "SEM (logit) vs SEM (dscore) 293_0")
+abline(0, betas[2], col = "orange")
+```
+
+## Full data
+
+```{r model818_6}
+library(dmetric)
+
+# get model and data
+model_name <- "818_6"
+path <- file.path("~/Project/gsed/phase1/202407", model_name)
+model <- readRDS(file.path(path, "model.Rds"))
+data <- readRDS(file.path(path, "data.Rds"))
+dim(data)
+```
+
+## Calculate both metrics - FULL
+
+```{r}
+# D-score
+ds <- dscore(data = data, xname = "agedays", xunit = "days")
+head(ds)
+
+# Logit
+dl <- dscore(data = data, xname = "agedays", xunit = "days", metric = "logit")
+head(dl)
+```
+
+## Control plots - FULL
+
+```{r}
+# Plots
+betas <- builtin_keys[builtin_keys$key == "gsed2406", c("intercept", "slope")]
+plot(x = dl$d, y = ds$d, cex = 0.4, pch = 19,
+     xlab = "D-score (logit)", ylab = "D-score (dscore)",
+     main = "D-score (logit) vs D-score (dscore) FULL")
+abline(coef = betas, col = "orange")
+plot(x = dl$sem, y = ds$sem, cex = 0.4, pch = 19,
+     xlab = "SEM (logit)", ylab = "SEM (dscore)",
+     main = "SEM (logit) vs SEM (dscore) FULL")
+abline(0, betas[2], col = "orange")
+```
+
+## Control plots - FULL - by study
+
+```{r}
+library(dplyr)
+library(ggplot2)
+plotdata <- cbind(ds, logitd = dl$d, logitsem = dl$sem, study = data$cohort) 
+plotdata <- filter(plotdata, study %in% c("GSED-BGD", "GSED-PAK", "GSED-TZA"))
+g1 <- ggplot(data = plotdata, aes(x = logitd, y = d, color = study)) +
+  theme_minimal() +
+  geom_point(size = 0.1) +
+  # geom_abline(intercept = betas[1], slope = betas[2], color = "orange") +
+  labs(y = "D-score", x = "Logit") +
+  facet_wrap(~study) +
+  theme(legend.position = "none")
+g1
+```
+
+```{r}
+g2 <- ggplot(data = plotdata, aes(x = logitsem, y = sem, color = study)) +
+  theme_minimal() +
+  geom_point(size = 0.1) +
+  # geom_abline(intercept = betas[1], slope = betas[2], color = "orange") +
+  labs(y = "D-score", x = "Logit") +
+  facet_wrap(~study) +
+  theme(legend.position = "none")
+g2
+```
+
+
