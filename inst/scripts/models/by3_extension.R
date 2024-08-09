@@ -27,8 +27,9 @@
 # Non-standard packages: dmetric (private), gseddata (private)
 # Inline R scripts: assemble_data.R
 #                   edit_data.R
+#                   join_LF_SF_BSID.R
 #
-# Aug 8, 2024 SvB
+# Aug 9, 2024 SvB
 
 # Should we produce time-consuming PDF plots?
 plot_pdf <- TRUE
@@ -68,73 +69,10 @@ source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
 #
 #  A. select LF, SF and BSID items from phase1 studies
-#
-
-# select instrument data and pre-process, select fixed administration
-adm <- c("ctrycd", "cohort", "cohortn", "subjid", "joinid", "agedays", "ins")
-items <- c(get_itemnames(ins = "gpa", order = "indm"),
-           get_itemnames(ins = "gto"),
-           get_itemnames(ins = "by3"))
-long <- work |>
-  filter(adm == "fixed") |>
-  mutate(
-    subjido = gsed_id,
-    agedays = age,
-    cohort = strtrim(subjido, 7),
-    cohort = recode(cohort, "11-GSED" = "GSED-BGD", "17-GSED" = "GSED-PAK", "20-GSED" = "GSED-TZA"),
-    ctrycd = recode(cohort, "GSED-BGD" = "BGD", "GSED-PAK" = "PAK", "GSED-TZA" = "TZA"),
-    cohortn = as.integer(strtrim(subjido, 2)) + 100L,
-    subjid = cohortn * 100000L + as.integer(substr(subjido, 9, 12)),
-    joinid = subjid * 100,
-    across(any_of(items), ~ recode(.x, "1" = 1L, "0" = 0L, .default = NA_integer_))) |>
-  drop_na(agedays) |>
-  select(all_of(adm), any_of(items))
-
-sf <- long |>
-  filter(ins == "sf") |>
-  select(all_of(adm), any_of(get_itemnames(ins = "gpa")))
-lf <- long |>
-  filter(ins == "lf") |>
-  select(all_of(adm), any_of(get_itemnames(ins = "gto")))
-bsid <- long |>
-  filter(ins == "bsid") |>
-  select(all_of(adm), any_of(get_itemnames(ins = "by3")))
-
-#
 #  B. fuzzy join the LF, SF and BSID administration to one record
 #
 
-join_method <- "onematch_10"
-
-sf_first <- sf |>
-  group_by(subjid) |>
-  slice(1L)
-lf_first <- lf |>
-  group_by(subjid) |>
-  slice(1L)
-bsid_first <- bsid |>
-  group_by(subjid) |>
-  slice(1L)
-
-phase1 <- fuzzyjoin::difference_left_join(sf_first, lf_first,
-                                          by = c("joinid", "agedays"),
-                                          max_dist = 10, distance_col = "dist") |>
-  ungroup() |>
-  rename(ctrycd = ctrycd.x, cohort = cohort.x, cohortn = cohortn.x,
-         subjid = subjid.x, agedays = agedays.x, joinid = joinid.x) |>
-  mutate(age = agedays / 365.25) |>
-  select(all_of(c("ctrycd", "cohort", "cohortn", "subjid", "joinid", "agedays", "ins.x", "ins.y")),
-         any_of(items))
-# phase1: 4374 records, 301 columns
-
-phase1 <- fuzzyjoin::difference_left_join(phase1, bsid_first,
-                                          by = c("joinid", "agedays"),
-                                          max_dist = 10, distance_col = "dist") |>
-  ungroup() |>
-  rename(ctrycd = ctrycd.x, cohort = cohort.x, cohortn = cohortn.x,
-         subjid = subjid.x, agedays = agedays.x, joinid = joinid.x) |>
-  mutate(age = agedays / 365.25) |>
-  select(c("ctrycd", "cohort", "cohortn", "subjid", "agedays"), any_of(items))
+source(system.file("scripts/join_LF_SF_BSID.R", package = "gsedscripts"))
 
 # phase1: 4374 records (=children), 624 columns (5 + 138 + 155 + 326)
 cat("dim(phase1):", dim(phase1), "\n")
@@ -162,6 +100,9 @@ cat("dim(data):", dim(data), "\n")
 #  D. select items with at least 25 observations in both categories
 #
 
+items <- c(get_itemnames(ins = "gpa", order = "indm"),
+           get_itemnames(ins = "gto"),
+           get_itemnames(ins = "by3"))
 items_subset <- dmetric::select_on_minimum_count(
   select(data, any_of(items)), min_ncat = 2L, min_cat = 25)
 data <- data |>
