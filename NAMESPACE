@@ -3,6 +3,7 @@
 export(calculate_administrative)
 export(make_wide)
 export(require_package)
+export(update_required_packages)
 importFrom(dplyr,across)
 importFrom(dplyr,all_of)
 importFrom(dplyr,any_of)
