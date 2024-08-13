@@ -4,11 +4,14 @@
 \alias{update_required_packages}
 \title{Update the required packages to their development versions}
 \usage{
-update_required_packages(allow_update = FALSE)
+update_required_packages(allow_update = FALSE, include_gseddata = FALSE)
 }
 \arguments{
 \item{allow_update}{Logical. If `TRUE`, the function will install the
 development versions from GitHub. The default in `FALSE`}
+
+\item{include_gseddata}{Logical. If `TRUE`, the function will also check for
+the `gseddata` package. The default is `FALSE`.}
 }
 \value{
 Logical. `TRUE` if all required packages are installed and up-to-date.

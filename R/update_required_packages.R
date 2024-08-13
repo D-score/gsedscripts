@@ -5,9 +5,12 @@
 #' from GitHub.
 #' @param allow_update Logical. If `TRUE`, the function will install the
 #' development versions from GitHub. The default in `FALSE`
+#' @param include_gseddata Logical. If `TRUE`, the function will also check for
+#' the `gseddata` package. The default is `FALSE`.
 #' @return Logical. `TRUE` if all required packages are installed and up-to-date.
 #' @export
-update_required_packages <- function(allow_update = FALSE) {
+update_required_packages <- function(allow_update = FALSE,
+                                     include_gseddata = FALSE) {
 
   current <- c("dscore" = "1.9.8",
                "dmetric" = "0.68.1",
@@ -36,13 +39,15 @@ update_required_packages <- function(allow_update = FALSE) {
     }
   }
 
-  if (!requireNamespace("gseddata", quietly = TRUE) ||
-      packageVersion("gseddata") < current[["gseddata"]]) {
-    if (allow_update) {
-      remotes::install_github("d-score/gseddata")
-    } else {
-      warning("Package gseddata is not installed or not up-to-date. Please install version ", current[["gseddata"]])
-      OK <- FALSE
+  if (include_gseddata) {
+    if (!requireNamespace("gseddata", quietly = TRUE) ||
+        packageVersion("gseddata") < current[["gseddata"]]) {
+      if (allow_update) {
+        remotes::install_github("d-score/gseddata")
+      } else {
+        warning("Package gseddata is not installed or not up-to-date. Please install version ", current[["gseddata"]])
+        OK <- FALSE
+      }
     }
   }
 
