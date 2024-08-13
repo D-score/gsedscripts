@@ -12,36 +12,31 @@ update_required_packages <- function() {
                "gsedread" = "0.8.0",
                "gsedscripts" = "0.15.0")
 
-  if ((!requireNamespace("dscore", quietly = TRUE) ||
-       packageVersion("dscore") < current[["dscore"]]) &&
+  if (!requireNamespace("dscore", quietly = TRUE) &&
       interactive()) {
     answer <- askYesNo(paste("Package dscore needed. Install from GitHub?"))
     if (answer) remotes::install_github("d-score/dscore")
   }
 
-  if ((!requireNamespace("dmetric", quietly = TRUE) ||
-       packageVersion("dmetric") < current[["dmetric"]]) &&
+  if (!requireNamespace("dmetric", quietly = TRUE) &&
       interactive()) {
     answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
     if (answer) remotes::install_github("d-score/dmetric")
   }
 
-  if ((!requireNamespace("gseddata", quietly = TRUE) ||
-       packageVersion("gseddata") < current[["gseddata"]]) &&
+  if (!requireNamespace("gseddata", quietly = TRUE) &&
       interactive()) {
     answer <- askYesNo(paste("Package gseddata needed. Install from GitHub?"))
     if (answer) remotes::install_github("d-score/gseddata")
   }
 
-  if ((!requireNamespace("gsedread", quietly = TRUE) ||
-       packageVersion("gsedread") < current[["gsedread"]]) &&
+  if (!requireNamespace("gsedread", quietly = TRUE) &&
       interactive()) {
     answer <- askYesNo(paste("Package gsedread needed. Install from GitHub?"))
     if (answer) remotes::install_github("d-score/gsedread")
   }
 
-  if ((!requireNamespace("gsedscripts", quietly = TRUE) ||
-       packageVersion("gsedscripts") < current[["gsedscripts"]]) &&
+  if (!requireNamespace("gsedscripts", quietly = TRUE) &&
       interactive()) {
     answer <- askYesNo(paste("Package gsedscripts needed. Install from GitHub?"))
     if (answer) remotes::install_github("d-score/gsedscripts")
@@ -55,6 +50,6 @@ update_required_packages <- function() {
     warning("Package gseddata is not up-to-date. Please update to version ", current[["gseddata"]])
   if (packageVersion("gsedread") < current[["gsedread"]])
     warning("Package gsedread is not up-to-date. Please update to version ", current[["gsedread"]])
-  if (packageVersion("gsedscipts") < current[["gsedscripts"]])
+  if (packageVersion("gsedscripts") < current[["gsedscripts"]])
     warning("Package gsedscripts is not up-to-date. Please update to version ", current[["gsedscripts"]])
 }
