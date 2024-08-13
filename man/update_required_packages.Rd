@@ -4,7 +4,14 @@
 \alias{update_required_packages}
 \title{Update the required packages to their development versions}
 \usage{
-update_required_packages()
+update_required_packages(allow_update = FALSE)
+}
+\arguments{
+\item{allow_update}{Logical. If `TRUE`, the function will install the
+development versions from GitHub. The default in `FALSE`}
+}
+\value{
+Logical. `TRUE` if all required packages are installed and up-to-date.
 }
 \description{
 This function checks if the required packages are installed and up-to-date.
