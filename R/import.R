@@ -1,3 +1,10 @@
-#' @importFrom remotes  install_github
-#' @importFrom utils    askYesNo install.packages packageVersion
+#' @importFrom dplyr      all_of any_of across case_match filter
+#'                        group_by
+#'                        mutate rename select slice starts_with ungroup
+#' @importFrom dscore     get_itemnames
+#' @importFrom fuzzyjoin  difference_left_join
+#' @importFrom remotes    install_github
+#' @importFrom rlang      .data
+#' @importFrom tidyr      drop_na
+#' @importFrom utils      askYesNo install.packages packageVersion
 NULL

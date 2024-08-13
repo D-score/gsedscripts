@@ -10,6 +10,11 @@ License: GPL
 Encoding: UTF-8
 LazyData: true
 Imports: 
+    dplyr,
+    dscore,
+    fuzzyjoin,
     remotes,
+    rlang,
+    tidyr,
     utils
 RoxygenNote: 7.3.1
