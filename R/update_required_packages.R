@@ -10,7 +10,7 @@ update_required_packages <- function() {
                "dmetric" = "0.68.1",
                "gseddata" = "1.9.0",
                "gsedread" = "0.8.0",
-               "gsedscripts" = "0.14.0")
+               "gsedscripts" = "0.15.0")
 
   if (!requireNamespace("dscore", quietly = TRUE) &&
       packageVersion("dscore") < current[["dscore"]] &&

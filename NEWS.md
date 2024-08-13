@@ -1,3 +1,11 @@
+# gsedscripts 0.15.0
+
+* Adds function `update_required_packages()` to automate modelling scripts
+* Adds function `calculate_administrative()` for deriving standard administrative variables
+* Adds function `make_wide()` to combine SF, LF and BSID data from the first observation period onto one record per child
+* Adds a script `inst/scripts/compare_domain_taus_293.R` to inspect the overlap between three streams of the LF a as way to informally inspect the uni-dimensionality of the LF. Used for the July 2024 version of the phase1 paper.
+* Adds a scripts `inst/scripts/extract_equate_table.R` to extract the equate table to compare keys `gsed1912` and `gsed2406`. Used for the July 2024 version of the phase1 paper.
+
 # gsedscripts 0.14.0
 
 * Adds `Rmd/20240802_logit.Rmd` to demonstrate that logit and D-score scales are consistent for LF and SF, but not for other instruments
