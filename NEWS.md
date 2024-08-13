@@ -1,3 +1,8 @@
+# gsedscripts 0.16.0
+
+* Updates function `update_required_packages()` to automate modelling scripts
+* Adds some dependencies into Suggests
+
 # gsedscripts 0.15.0
 
 * Adds function `update_required_packages()` to automate modelling scripts
