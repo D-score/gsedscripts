@@ -16,7 +16,7 @@ update_required_packages <- function(allow_update = FALSE,
                "dmetric" = "0.68.1",
                "gseddata" = "1.9.0",
                "gsedread" = "0.8.0",
-               "gsedscripts" = "0.16.0")
+               "gsedscripts" = "0.17.0")
   OK <- TRUE
 
   if (!requireNamespace("dscore", quietly = TRUE) ||
