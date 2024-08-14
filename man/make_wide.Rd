@@ -9,6 +9,7 @@ make_wide(
   instruments = c("gpa", "gto", "by3"),
   days = 10L,
   drop_na_age = TRUE,
+  include_return = FALSE,
   quiet = FALSE
 )
 }
@@ -21,6 +22,8 @@ instruments are `"gpa"`, `"gto"` and `"by3"`.}
 \item{days}{Non-negative integer, window width in number of days}
 
 \item{drop_na_age}{Logical. Should measurements with missing ages be dropped?}
+
+\item{include_return}{Logical. Should the return visits be included in the join?}
 
 \item{quiet}{Logical. Print messages to terminal?}
 }
