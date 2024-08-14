@@ -1,3 +1,8 @@
+# gsedscripts 0.17.0
+
+* Substantial update 293_0 script
+* Generalizes `make_wide()` to provide more records for analysis
+
 # gsedscripts 0.16.0
 
 * Updates function `update_required_packages()` to automate modelling scripts
