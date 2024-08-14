@@ -1,6 +1,15 @@
 # gsedscripts 0.17.0
 
 * Substantial update 293_0 script
+
+- better stepwise approach
+- use of new functions to reduce copies
+- add item deletion of rare categories
+- add code to test D-score - logit alignment
+- check anchors
+- graph item and person fit
+- add tests for DIF by cohort
+
 * Generalizes `make_wide()` to provide more records for analysis
 
 # gsedscripts 0.16.0
