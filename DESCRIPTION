@@ -10,15 +10,16 @@ License: GPL
 Encoding: UTF-8
 LazyData: true
 Imports: 
+    difR (>= 5.1),
     dplyr,
-    dscore,
+    dscore (>= 1.9.8),
     fuzzyjoin,
     remotes,
     rlang,
     tidyr,
     utils
 Suggests:
-    dmetric,
-    gseddata,
-    gsedread
-RoxygenNote: 7.3.1
+    dmetric (>= 0.68.1),
+    gseddata (>= 1.9.0),
+    gsedread (>= 0.8.0)
+RoxygenNote: 7.3.2
