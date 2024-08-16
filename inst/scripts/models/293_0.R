@@ -26,9 +26,16 @@
 #  G. test for proper D-score vs logit alignment
 #  H. create diagnostic plots
 #  I. evaluate item and person fit
-#  I. keep best fitting BSID-items by outfit and infit < 1.0
-#  J. refit model using items selected in I by repeating steps F to H
-#  K. create and save key extension.txt
+#  J. calculate DIF by cohort by instrument
+#  H. evaluate uni-dimensionality
+#
+#  Future steps
+#  - keep best fitting items by outfit and infit < criterion
+#  - keep best fitting children by outfit and infit < criterion
+#  - study sources of DIF, remove or replace DIF-items
+#  - suggest DIF-free subset through DIF-purification
+#  - refit model with DIF-free subset
+#  - store final core model
 #
 # Dependencies
 # Assumed environmental variable: ONEDRIVE_GSED
@@ -51,7 +58,7 @@
 # Update 202407: SvB: Just a rename to collect all July 2024 model results
 # Update 20240813: Use new functions to replace duplicate fragments
 
-plot_pdf <- TRUE
+plot_pdf <- FALSE
 include_return <- TRUE
 
 gsedscripts::update_required_packages(allow_update = FALSE)
@@ -64,6 +71,7 @@ library("gsedscripts")
 
 library("dplyr")
 library("testthat")
+library("difR")
 
 #
 #  A. read phase1 data into object 'work'
@@ -265,73 +273,67 @@ table(fits$instrument, fits$lt1.4)
 
 
 #
-#  J. test DIF by cohort
+#  J. test DIF by cohort by instrument
 #
 
-my_items <- model$items[starts_with(c("gpa", "gto"), vars = model$items)]
-lgt <- dscore(items = model$items, data = data, xname = "agedays", xunit = "days",
-              transform = transform, key = model$name, itembank = model$itembank, metric = "logit")
+## ---- DIF TEST FOR SF
+
+itm <- model$items[starts_with("gpa", vars = model$items)]
+lgt <- dscore(items = itm, data = data, xname = "agedays", xunit = "days",
+              transform = transform, key = model$name, itembank = model$itembank,
+              metric = "logit")
 score <- lgt$d
-my_items <- model$items
-
-# # -- Using sirt for one focal group, SF/LF as one test
-# This is cumbersome because we have multiple groups
-# dat <- data.frame(data[, c("cohortn", my_items)], score)
-# BGD <- ifelse(dat$cohortn == 111, 1, 0)
-# PAK <- ifelse(dat$cohortn == 117, 1, 0)
-# TZA <- ifelse(dat$cohortn == 120, 1, 0)
-#
-# BGD_dif <- sirt::dif.logistic.regression(dat = dat[, my_items],
-#                                          group = BGD,
-#                                          score = dat$score)
-# PAK_dif <- sirt::dif.logistic.regression(dat = dat[, my_items],
-#                                          group = PAK,
-#                                          score = dat$score)
-# TZA_dif <- sirt::dif.logistic.regression(dat = dat[, my_items],
-#                                          group = TZA,
-#                                          score = dat$score)
-# table(BGD_dif$DIF.ETS)
-# table(PAK_dif$DIF.ETS)
-# table(TZA_dif$DIF.ETS)
-
-# -- Using difR::difGenLogistic() for multiple groups, SF/LF as one test
-library(difR)
-
-result_GLR <- difR::difGenLogistic(Data = as.matrix(data[, my_items]),
-                                   group = as.character(data$cohort),
-                                   focal.names = unique(data$cohort),
-                                   match = score,
-                                   p.adjust = "holm")
-cat("Number of failed GLR DIF tests: ", sum(is.na(result_GLR$deltaR2)), "\n")
-
-# print.genLogistic(dif)
-zumbo <- cut(result_GLR$deltaR2, breaks = c(-Inf, 0.13, 0.26, Inf), labels = c(LETTERS[1:3]))
-jodoin <- cut(result_GLR$deltaR2, breaks = c(-Inf, 0.035, 0.07, Inf), labels = c(LETTERS[1:3]))
-table(zumbo, useNA = "always")
-table(jodoin, useNA = "always")
-
-# -- Using difR::difGMH() for multiple groups, SF/LF as one test
-result_GMH <- difR::difGMH(Data = as.matrix(data[, my_items]),
-                           group = as.character(data$cohort),
-                           focal.names = unique(data$cohort),
-                           match = score)
-cat("Number of failed GMH DIF tests: ", sum(is.na(result_GMH$GMH)), "\n")
-
-GHM_result <- cut(result_GMH$GMH, breaks = c(-Inf, result_GMH$thr, Inf), labels = c("", "DIF"))
-tmp <- data.frame(item = my_items, GMH = result_GMH$GMH, p.value = result_GMH$p.value, GHM_result)
-
-# plot main DIF statistics
-oldpar <- par(mfrow = c(1, 2))
-hist(result_GLR$deltaR2, breaks = seq(0, 0.3, 0.005), main = "Generalized logistic regression DIF", xlab = "delta R2")
-hist(result_GMH$GMH, breaks = seq(0, 30, 0.5), main = "Generalized Mantel-Haenszel DIF", xlab = "GHM-statistic")
-par <- par(mfrow = c(1, 1))
-
-# create item table sorted by DIF
-
-dif_table <- data.frame(num = 1:length(my_items), item = my_items, deltaR2 = result_GLR$deltaR2, zumbo = zumbo, jodoin = jodoin)
-dif_table <- left_join(dif_table, tmp, by = c("item" = "item"))
+group <- as.character(data$cohort)
+dif_table <- calculate_DIF_table(data = data, items = itm, score = score, group = group)
 dif_table <- left_join(dif_table, model$item_fit[, c("item", "infit", "outfit")], by = c("item" = "item"))
 dif_table <- left_join(dif_table, model$itembank[, c("item", "tau", "label")], by = c("item" = "item"))
-dif_table <- dif_table[, c("num", "item", "tau", "infit", "outfit", "deltaR2", "GMH", "zumbo", "jodoin", "GHM_result", "label")]
-head(dif_table, 30)
+dif_table <- dif_table[, c("num", "item", "tau", "infit", "outfit",
+                           "MH_stat", "MH_DIF",
+                           "LR_stat", "LR_deltaR2" , "LR_zumbo", "LR_jodoin",
+                           "label")]
+dif_table_sf <- dif_table
 
+## ---- DIF TEST FOR LF
+
+itm <- model$items[starts_with("gto", vars = model$items)]
+lgt <- dscore(items = itm, data = data, xname = "agedays", xunit = "days",
+              transform = transform, key = model$name, itembank = model$itembank,
+              metric = "logit")
+score <- lgt$d
+group <- as.character(data$cohort)
+dif_table <- calculate_DIF_table(data = data, items = itm, score = score, group = group)
+dif_table <- left_join(dif_table, model$item_fit[, c("item", "infit", "outfit")], by = c("item" = "item"))
+dif_table <- left_join(dif_table, model$itembank[, c("item", "tau", "label")], by = c("item" = "item"))
+dif_table <- dif_table[, c("num", "item", "tau", "infit", "outfit",
+                           "MH_stat", "MH_DIF",
+                           "LR_stat", "LR_deltaR2" , "LR_zumbo", "LR_jodoin",
+                           "label")]
+dif_table_lf <- dif_table
+
+# plot main DIF statistics
+# FIX NEEDED: Too many zeroes in Delta R2 Statistic, and many NaNs
+oldpar <- par(mfrow = c(2, 2))
+hist(dif_table_sf$MH_stat, breaks = c(seq(0, 30, 0.5), Inf), xlim = c(0, 30), ylim = c(0, 0.45), main = "SF: Generalized Mantel-Haenszel", xlab = "MH DIF-statistic")
+hist(dif_table_sf$LR_deltaR2, breaks = c(seq(0, 0.3, 0.005), Inf), xlim = c(0, 0.3), main = "SF: Generalized logistic regression", xlab = "Delta R2 Statistic")
+hist(dif_table_lf$MH_stat, breaks = c(seq(0, 30, 0.5), Inf), xlim = c(0, 30), ylim = c(0, 0.45), main = "LF: Generalized Mantel-Haenszel", xlab = "MH DIF-statistic")
+hist(dif_table_lf$LR_deltaR2, breaks = c(seq(0, 0.3, 0.005), Inf), xlim = c(0, 0.3), main = "LF: Generalized logistic regression", xlab = "Delta R2 Statistic")
+par <- par(mfrow = c(1, 1))
+
+# Save DIF tables
+write.csv(dif_table_sf, file = file.path(path, "dif_table_sf.csv"), row.names = FALSE)
+write.csv(dif_table_lf, file = file.path(path, "dif_table_lf.csv"), row.names = FALSE)
+
+#
+#  H. evaluate uni-dimensionality
+#
+
+itm <- model$items[starts_with("gpa", vars = model$items)]
+taus <- get_tau(itm, itembank = model$itembank, key = model$name)
+q3 <- sirt::Q3(dat = data[, itm], theta = score, b = taus)
+
+p <- length(itm)
+q3m <- q3$q3.matrix
+# diag(q3m) <- NA
+# q3m[q3m < 0.2] <- NA
+image( 1:p, 1:p, q3m, col = gray(1-(0:32)/32), xlab = "Item", ylab = "Item")
+image( 1:p, 1:p, q3m, col = rainbow(n = 8), xlab = "Item", ylab = "Item")
