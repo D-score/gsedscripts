@@ -1,14 +1,20 @@
+# gsedscripts 0.18.0
+
+- Updates `scripts/models/293_0.R` to use DIF tabulation function and explore Yen's Q3 method for exploring dimensionality
+- Updates `scripts/models/lf_155_0.R` to feature newer functions and to compact code
+- Adds `scripts/DIF_demo_2groups.R` to shows how to use the `difR` package in the SMOCC data for testing 2-group DIF with MH and logistic regression methods
+- Adds `calculate_DIF_table()` for testing DIF
+
 # gsedscripts 0.17.0
 
 * Substantial update 293_0 script
-
-- better stepwise approach
-- use of new functions to reduce copies
-- add item deletion of rare categories
-- add code to test D-score - logit alignment
-- check anchors
-- graph item and person fit
-- add tests for DIF by cohort
+  - better stepwise approach
+  - use of new functions to reduce copies
+  - add item deletion of rare categories
+  - add code to test D-score - logit alignment
+  - check anchors
+  - graph item and person fit
+  - add tests for DIF by cohort
 
 * Generalizes `make_wide()` to provide more records for analysis
 
