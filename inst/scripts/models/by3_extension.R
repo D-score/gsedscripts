@@ -10,10 +10,10 @@
 # estimates of those items.
 #
 # The script takes the following actions:
-#  A. select LF, SF and BSID items from phase1 studies
-#  B. fuzzy join the LF, SF and BSID administration to one record
+#  A. read phase1 data into object 'work'
+#  B. fuzzy join the LF, SF and BSID phase1 fixed mode data
 #  C. append five phase0 studies with BSID-III data
-#  D. select items with at least 25 observations in both categories
+#  D. select items with at least 10 observations in both categories
 #  E. fix the tau difficulties of all SF/LF items to the 293_0 model
 #  F. estimate tau of BSID III items by a single group design
 #  G. test for proper D-score vs logit alignment
@@ -29,52 +29,42 @@
 #                   edit_data.R
 #                   join_LF_SF_BSID.R
 #
-# Aug 9, 2024 SvB
+# Aug 13, 2024 SvB
 
 # Should we produce time-consuming PDF plots?
 plot_pdf <- TRUE
 
-library(dplyr)
-library(ggplot2)
-library(fuzzyjoin)
-library(testthat)
+# Update required packages
+gsedscripts::update_required_packages(allow_update = FALSE,
+                                      include_gseddata = TRUE)
 
-# If needed, install dmetric and gseddata from GitHub
-if (!requireNamespace("dscore", quietly = TRUE) && interactive()) {
-  answer <- askYesNo(paste("Package dscore needed. Install from GitHub?"))
-  if (answer) remotes::install_github("d-score/dscore")
-}
-if (packageVersion("dscore") < "1.9.5") stop("Needs dscore 1.9.5")
-if (!requireNamespace("dmetric", quietly = TRUE) && interactive()) {
-  answer <- askYesNo(paste("Package dmetric needed. Install from GitHub?"))
-  if (answer) remotes::install_github("d-score/dmetric")
-}
-if (packageVersion("dmetric") < "0.68.1") stop("Needs dmetric 0.68.1 or higher")
-
-if (!requireNamespace("gseddata", quietly = TRUE) && interactive()) {
-  answer <- askYesNo(paste("Package gseddata needed. Install from GitHub?"))
-  if (answer) remotes::install_github("d-score/gseddata")
-}
-if (packageVersion("gseddata") < "1.9.0") stop("Needs gseddata 1.9.0 or higher")
-if (packageVersion("gsedread") < "0.8.0") stop("Needs gseddata 0.8.0 or higher")
-
+# Load required packages
 library("dscore")
 library("dmetric")
 library("gseddata")
+library("gsedread")
+library("gsedscripts")
 
-# run auxiliary scripts to read and process data from source
-if (packageVersion("gsedscripts") < "0.13.0") stop("Needs gsedscripts 0.13.0")
+library("testthat")
+library("dplyr")
+
+#
+#  A. read phase1 data into object 'work'
+#
+
 suppressWarnings(source(system.file("scripts/assemble_data.R", package = "gsedscripts")))
 source(system.file("scripts/edit_data.R", package = "gsedscripts"))
 
 #
-#  A. select LF, SF and BSID items from phase1 studies
-#  B. fuzzy join the LF, SF and BSID administration to one record
+#  B. fuzzy join the LF, SF and BSID phase1 fixed mode data
 #
 
-source(system.file("scripts/join_LF_SF_BSID.R", package = "gsedscripts"))
+phase1 <- bind_cols(calculate_administrative(work), work) |>
+  filter(adm == "fixed") |>
+  select(-colnames(work)[c(1:2, 4:26)]) |>
+  make_wide(instruments = c("gpa", "gto", "by3"))
 
-# phase1: 4374 records (=children), 624 columns (5 + 138 + 155 + 326)
+# phase1: 4374 records (=children), 627 columns (5 + 3 + 138 + 155 + 326)
 cat("dim(phase1):", dim(phase1), "\n")
 
 #
@@ -82,32 +72,32 @@ cat("dim(phase1):", dim(phase1), "\n")
 #
 
 # get phase0 data
-adm <- c("ctrycd", "cohort", "cohortn", "subjid", "agedays")
+adm <- c("ctrycd", "cohort", "cohortn", "subjid", "subjido", "agedays")
 phase0_lean <- get_data(
   data = gseddata::gsed_lean, adm =  adm,
   items = get_itemnames(ins = "by3"))
 phase0_lean <- clean_data(phase0_lean)
-phase0 <- as.data.frame(phase0_lean)
+phase0 <- tibble(data.frame(phase0_lean))
 
-# dim(phase0): 5057 320
+# dim(phase0): 5057 321
 cat("dim(phase0):", dim(phase0), "\n")
 data <- bind_rows(phase1, phase0)
 
-# dim(data): 9431 624
+# dim(data): 9431 628
 cat("dim(data):", dim(data), "\n")
 
 #
-#  D. select items with at least 25 observations in both categories
+#  D. select items with at least 10 observations in both categories
 #
 
 items <- c(get_itemnames(ins = "gpa", order = "indm"),
            get_itemnames(ins = "gto"),
            get_itemnames(ins = "by3"))
 items_subset <- dmetric::select_on_minimum_count(
-  select(data, any_of(items)), min_ncat = 2L, min_cat = 25)
+  select(data, any_of(items)), min_ncat = 2L, min_cat = 10L)
 data <- data |>
   select(all_of(adm), all_of(items_subset))
-# dim(data): 9431 606
+# dim(data): 9431 581
 cat("dim(data):", dim(data), "\n")
 
 #
@@ -117,6 +107,15 @@ cat("dim(data):", dim(data), "\n")
 fix_key <- "293_0"
 fix_items <- intersect(colnames(data), get_itemnames(ins = c("gpa", "gto")))
 d_fixed <- get_tau(items = fix_items, key = fix_key)
+
+# Fix by3 runaway items - NOT USED
+# by3red035: Identifies colours
+# gtolgd043: B43. Identifies 2 or more colors
+# runaway <- c(d_fixed["gtolgd043"], d_fixed["gtogmd015"])
+# names(runaway) <- c("by3red035", "by3gmd025")
+# d_fixed <- c(d_fixed, runaway)
+
+# transform to logit
 transform <- builtin_keys |>
   filter(key == fix_key) |>
   select(all_of(c("intercept", "slope"))) |>
@@ -188,6 +187,21 @@ if (plot_pdf) {
                    xlim = c(0, 100),
                    xbreaks = seq(0, 100, 10))
 }
+
+# person fit statistics by3
+my_items <- model$items[starts_with("by3", vars = model$items)]
+dat <- data[, my_items]
+lgt <- dscore(items = model$items, data = data, xname = "agedays", xunit = "days",
+              metric = "logit")
+my_tau <- get_tau(my_items, itembank = model$itembank, key = model$name)
+my_tau <-  (my_tau - transform["intercept"]) / transform["slope"]
+pfit <- sirt::personfit.stat(
+  dat = dat,
+  abil = lgt$d,
+  b = my_tau)
+hist(pfit$outfit, xlim = c(0, 5), breaks = 10000)
+hist(pfit$infit, xlim = c(0, 5), breaks = 100)
+plot(pfit$infit, pfit$outfit, xlim = c(0, 3), ylim = c(0, 3), cex = 0.2)
 
 # Compare D-scores estimated from LF, SF and BSID-III
 d_lf <- dscore(items = lf_items, data = data, xname = "agedays", xunit = "days")
@@ -307,7 +321,8 @@ if (plot_pdf) {
 d_lf <- dscore(items = lf_items, data = data, xname = "agedays", xunit = "days")
 d_sf <- dscore(items = sf_items, data = data, xname = "agedays", xunit = "days")
 d_by3 <- dscore(items = by3_items, data = data, xname = "agedays", xunit = "days",
-                key = model_name, itembank = model$itembank)
+                key = model_name, itembank = model$itembank,
+                population = "preliminary_standards", verbose = TRUE)
 d_by3_pub <- dscore(items = by3_items, data = data, xname = "agedays", xunit = "days")
 d_combined <- data.frame(age = data$agedays / 365.25,
                          LF = d_lf$d, SF = d_sf$d,
@@ -317,12 +332,23 @@ panel_with_abline <- function(x, y, ...) {
   abline(0, 1, col = "orange")
 }
 
-# correlations between instruments
+# correlations between instruments D
 pairs(d_combined[, 2:4],
       panel = panel_with_abline,
       main = "D-scores LF, SF, BSID-III",
       cex = 0.3, xlim = c(0, 90), ylim = c(0, 90), gap = 0)
 cor(d_combined[, 1:4], use = "pairwise.complete.obs")
+
+# correlations between instruments DAZ
+daz_combined <- data.frame(age = data$agedays / 365.25,
+                           LF = d_lf$daz, SF = d_sf$daz,
+                           BSID_III = d_by3$daz)
+pairs(daz_combined[, 1:4],
+      panel = panel_with_abline,
+      main = "DAZ LF, SF, BSID-III",
+      cex = 0.3, xlim = c(-3, 3), ylim = c(-3, 3), gap = 0)
+cor(daz_combined[, 1:4], use = "pairwise.complete.obs")
+
 
 #
 #  J.I
@@ -357,3 +383,4 @@ write.table(ib,
             quote = FALSE,
             sep = "\t",
             row.names = FALSE)
+

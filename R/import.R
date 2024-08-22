@@ -1,4 +1,4 @@
-#' @importFrom difR       difGenLogistic difGMH
+#' @importFrom difR       genDichoDif
 #' @importFrom dplyr      all_of any_of across arrange bind_rows
 #'                        case_match filter group_by left_join
 #'                        mutate rename row_number select

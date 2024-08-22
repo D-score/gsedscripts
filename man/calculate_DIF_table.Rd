@@ -4,17 +4,24 @@
 \alias{calculate_DIF_table}
 \title{Calculate DIF statistic per item for multiple groups}
 \usage{
-calculate_DIF_table(data, items, score, group, levels = NULL, thr = NULL)
+calculate_DIF_table(
+  data,
+  items,
+  group,
+  score = "score",
+  levels = NULL,
+  thr = NULL
+)
 }
 \arguments{
 \item{data}{Data frame with dichotomous item responses and age}
 
 \item{items}{Character vector with item names}
 
-\item{score}{Data frame with item parameters}
-
 \item{group}{Factor or character vector with group names. Must have same
 length as the number of rows in the data frame.}
+
+\item{score}{Data frame with item parameters. Optional.}
 
 \item{levels}{Optional. Character vector with group names. If omitted, the function
 will use the unique values of the group variable.}
@@ -36,10 +43,37 @@ DIF statistics per item.
 The function uses the `"holm"` method for p-value adjustment.
 }
 \examples{
-library(dscore)
-data <- dscore::milestones
-score <- dscore(data = data, xname = "age", metric = "logit")[["d"]]
-items <- intersect(get_itemnames(ins = "ddi", order = "indm"), colnames(data))
+\dontrun{
+# For some reason, the following example does not work with the
+# version 5.1 of difR. The example is kept here for future reference.
+# We get: Error in n.ppk * diag(rk) - rk \%*\% t(rk) : non-conformable arrays
 
-calculate_DIF_table(data = data, items = items, group = data$sex, score = score)
+# DIF by sex, Dutch SMOCC data
+library(dscore)
+library(childdevdata)
+data <- childdevdata::gcdg_nld_smocc
+items <- intersect(get_itemnames(ins = "ddi", order = "indm"), colnames(data))
+score <- dscore(data = data, items = items, xname = "agedays", xunit = "days",
+metric = "logit")[["d"]]
+group <- as.character(data$sex)
+
+# Remove rows with fewer than 3 observations
+# Remove missing values from group and score
+responses <- as.matrix(data[, items])
+sparse <- rowSums(!is.na(responses)) < 3
+idx <- !(is.na(score) | is.na(group) | sparse)
+responses <- responses[idx, ]
+group <- group[idx]
+score <- score[idx]
+
+library(difR )
+LR <- difLogistic(Data = responses,
+  group = group,
+  focal.names = unique(group),
+  match = score)
+MH <- difMH(Data = responses,
+  group = group,
+  focal.names = unique(group),
+  match = score)
+}
 }

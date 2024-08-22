@@ -279,12 +279,12 @@ table(fits$instrument, fits$lt1.4)
 ## ---- DIF TEST FOR SF
 
 itm <- model$items[starts_with("gpa", vars = model$items)]
-lgt <- dscore(items = itm, data = data, xname = "agedays", xunit = "days",
-              transform = transform, key = model$name, itembank = model$itembank,
-              metric = "logit")
-score <- lgt$d
+# lgt <- dscore(items = itm, data = data, xname = "agedays", xunit = "days",
+#               transform = transform, key = model$name, itembank = model$itembank,
+#               metric = "logit")
+# score <- lgt$d
 group <- as.character(data$cohort)
-dif_table <- calculate_DIF_table(data = data, items = itm, score = score, group = group)
+dif_table <- calculate_DIF_table(data = data, items = itm, group = group)
 dif_table <- left_join(dif_table, model$item_fit[, c("item", "infit", "outfit")], by = c("item" = "item"))
 dif_table <- left_join(dif_table, model$itembank[, c("item", "tau", "label")], by = c("item" = "item"))
 dif_table <- dif_table[, c("num", "item", "tau", "infit", "outfit",
@@ -296,12 +296,8 @@ dif_table_sf <- dif_table
 ## ---- DIF TEST FOR LF
 
 itm <- model$items[starts_with("gto", vars = model$items)]
-lgt <- dscore(items = itm, data = data, xname = "agedays", xunit = "days",
-              transform = transform, key = model$name, itembank = model$itembank,
-              metric = "logit")
-score <- lgt$d
 group <- as.character(data$cohort)
-dif_table <- calculate_DIF_table(data = data, items = itm, score = score, group = group)
+dif_table <- calculate_DIF_table(data = data, items = itm, group = group)
 dif_table <- left_join(dif_table, model$item_fit[, c("item", "infit", "outfit")], by = c("item" = "item"))
 dif_table <- left_join(dif_table, model$itembank[, c("item", "tau", "label")], by = c("item" = "item"))
 dif_table <- dif_table[, c("num", "item", "tau", "infit", "outfit",
@@ -328,12 +324,36 @@ write.csv(dif_table_lf, file = file.path(path, "dif_table_lf.csv"), row.names = 
 #
 
 itm <- model$items[starts_with("gpa", vars = model$items)]
+score <- dscore(items = itm, data = data, xname = "agedays", xunit = "days",
+              transform = transform, key = model$name, itembank = model$itembank,
+              metric = "logit")$d
 taus <- get_tau(itm, itembank = model$itembank, key = model$name)
+taus <- (taus - transform["intercept"]) / transform["slope"]
+observed <- cor(data[, itm], method = "spearman", use = "pairwise")
 q3 <- sirt::Q3(dat = data[, itm], theta = score, b = taus)
 
 p <- length(itm)
 q3m <- q3$q3.matrix
-# diag(q3m) <- NA
-# q3m[q3m < 0.2] <- NA
+diag(q3m) <- NA
+# q3m[abs(q3m) < 0.2] <- NA
+obs <- observed
+obs[abs(obs) < 0.2] <- NA
+q3m[abs(q3m) < 0.4] <- NA
+dif <- obs - q3m
+
+# oldpar <- par(mfrow = c(1, 2))
+# hist(observed[as.numeric(q3$q3.long$N) > 0], breaks = seq(-1, 1, 0.02), main = "Pairwise Spearman correlation", xlab = "Correlation")
+hist(q3$q3.long$Q3[as.numeric(q3$q3.long$N) > 200], freq = TRUE, breaks = c(-Inf, seq(-0.5, 0.5, 0.01), Inf), xlim = c(-0.5, 0.5), main = "Q3 correlations", xlab = "Correlation")
+# oldpar <- par(mfrow = c(1, 1))
+
+boxplot(q3$q3.long$Q3[as.numeric(q3$q3.long$N) > 200], horizontal = TRUE)
+table(q3$q3.long$Q3[as.numeric(q3$q3.long$N) > 200] < 0.2)
+table(q3$q3.long$Q3[as.numeric(q3$q3.long$N) > 200] < -0.2)
+
 image( 1:p, 1:p, q3m, col = gray(1-(0:32)/32), xlab = "Item", ylab = "Item")
-image( 1:p, 1:p, q3m, col = rainbow(n = 8), xlab = "Item", ylab = "Item")
+image( 1:p, 1:p, q3m, col = rainbow(n = 8), xlab = "Item", ylab = "Item", useRaster = TRUE)
+
+filled.contour( 1:p, 1:p, obs, col = colorRampPalette(c("blue", "white", "red"))(17), xlab = "Item", ylab = "Item")
+filled.contour( 1:p, 1:p, q3m, col = colorRampPalette(c("blue", "white", "red"))(20), xlab = "Item", ylab = "Item")
+filled.contour( 1:p, 1:p, dif, col = colorRampPalette(c("blue", "white", "red"))(20), xlab = "Item", ylab = "Item")
+

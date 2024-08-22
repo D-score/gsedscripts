@@ -1,3 +1,6 @@
+
+- Extends `scripts/DIF_demo.R` with >2 groups
+
 # gsedscripts 0.18.0
 
 - Updates `scripts/models/293_0.R` to use DIF tabulation function and explore Yen's Q3 method for exploring dimensionality
