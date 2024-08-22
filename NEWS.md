@@ -1,3 +1,4 @@
+# gsedscripts 0.19.0
 
 - Extends `scripts/DIF_demo.R` with >2 groups
 
