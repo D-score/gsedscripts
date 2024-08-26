@@ -43,6 +43,8 @@ residuals <- residuals %>% mutate(
   z2 = .data$z ^ 2,
   y2 = .data$w * .data$z2, #score residual squared: mean(y2-grp1) - mean(y2-grp2)
   w2 = .data$w ^ 2,
+  varRi = .data$p * (1 - .data$p),
+  varSi = .data$p * (1 - .data$p) * (1 - 2 * .data$p)^2,
   cdivw2 = .data$c / .data$w2,
   cminw2 = .data$c - .data$w2
 )
@@ -53,20 +55,24 @@ dif_items <-
   summarise(
     n = n(),
     RdifRi = sum(.data$y)/n,
-    varRdifRi = sum(.data$w)/ n^2,
+    varRdifRi = sum(.data$varRi)/ n^2,
     RdifSi = sum(.data$y2)/n,
     meanRdifSi = sum(.data$w)/n,
-    varRdifSi = sum(.data$cdivw2)/n
+    varRdifSi = sum(.data$varSi)/n^2
   )
 
 dif_items %>% group_by(item) %>%
   summarise(RdifR = diff(RdifRi),
             varRdifR = sum(varRdifRi),
-            zR = RdifR/sqrt(varRdifR),
-            pR = pnorm(zR),
             RdifS = diff(RdifSi),
             varRdifS = sum(varRdifSi),
-            expS = diff(meanRdifSi),
-            zS = RdifS/sqrt(varRdifS),
-            pS = pnorm(zS)
-  )
+            expS = diff(meanRdifSi)
+  ) %>%
+  mutate(
+    zR = RdifR/sqrt(varRdifR),
+    pR = 2 * (1- pnorm(abs(zR))),
+    zS = (RdifS - expS) /sqrt(varRdifS),
+    pS = 2 * (1- pnorm(abs(zS)))
+  ) %>%
+  select(RdifR, varRdifR, zR, pR, RdifS, expS, varRdifS, zS, pS)
+
