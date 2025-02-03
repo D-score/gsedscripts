@@ -1,3 +1,9 @@
+# gsedscripts 0.20.0
+
+- Adds two working scripts
+  + `inst/scripts/models/818_6_enhancements.R`, a further development of `818_6.R`
+  + `inst/scripts/293_0_BSID_experimental.R`, a script to explore a better linking method, using the BSID-III and the 293_0 model. Needs to be checked and - if OK - generalized 
+
 # gsedscripts 0.19.0
 
 - Extends `scripts/DIF_demo.R` with >2 groups
