@@ -1,7 +1,7 @@
 Package: gsedscripts
 Type: Package
 Title: Package with scripts and functions for GSED validation
-Version: 0.20.0
+Version: 0.21.0
 Author: Stef van Buuren
 Maintainer: Stef van Buuren <stef.vanbuuren@tno.nl>
 Description: Holdout for scripts and custom functions needed for the 
@@ -21,5 +21,6 @@ Imports:
 Suggests:
     dmetric (>= 0.68.1),
     gseddata (>= 1.9.0),
-    gsedread (>= 0.8.0)
+    gsedread (>= 0.8.0),
+    childdevdata
 RoxygenNote: 7.3.2

@@ -1,3 +1,7 @@
+# gsedscripts 0.21.0
+
+- Add script `inst/scripts/DIF_demo_residuals` 
+
 # gsedscripts 0.20.0
 
 - Adds two working scripts
