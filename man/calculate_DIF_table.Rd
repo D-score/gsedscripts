@@ -9,8 +9,10 @@ calculate_DIF_table(
   items,
   group,
   score = "score",
-  levels = NULL,
-  thr = NULL
+  focal.names = NULL,
+  thr = NULL,
+  p.adjust.method = "holm",
+  method = c("GMH", "genLogistic")
 )
 }
 \arguments{
@@ -23,57 +25,44 @@ length as the number of rows in the data frame.}
 
 \item{score}{Data frame with item parameters. Optional.}
 
-\item{levels}{Optional. Character vector with group names. If omitted, the function
-will use the unique values of the group variable.}
+\item{focal.names}{Optional. Character vector with group names.
+If omitted, the function will use the unique values of the group variable.}
 
 \item{thr}{Optional. Threshold for DIF classification using the MH-statistics.
 If omitted, the function will use the threshold from the `difGMH()` function.}
+
+\item{p.adjust.method}{The adjustment method. Defaults to `"holm"`}
+
+\item{method}{Character vector with methods to use for DIF analysis. Either
+`"GMH"` or `"genLogistic"`.}
 }
 \value{
 data frame with DIF statistics per item
 }
 \description{
 This function calculates DIF statistics for multiple groups using the
-`difR` package. The function uses the `difGenLogistic()` function for
-generalized logistic regression and the `difGMH()` function for the
-generalized Mantel-Haenszel test. The function returns a table with
-DIF statistics per item.
+`difR` package. The function uses the `genDichoDif()` function for
+generalized logistic regression and the generalized Mantel-Haenszel test.
+The function returns a table with DIF statistics per item.
 }
 \details{
 The function uses the `"holm"` method for p-value adjustment.
 }
 \examples{
-\dontrun{
-# For some reason, the following example does not work with the
-# version 5.1 of difR. The example is kept here for future reference.
-# We get: Error in n.ppk * diag(rk) - rk \%*\% t(rk) : non-conformable arrays
-
-# DIF by sex, Dutch SMOCC data
 library(dscore)
 library(childdevdata)
 data <- childdevdata::gcdg_nld_smocc
-items <- intersect(get_itemnames(ins = "ddi", order = "indm"), colnames(data))
-score <- dscore(data = data, items = items, xname = "agedays", xunit = "days",
-metric = "logit")[["d"]]
-group <- as.character(data$sex)
+items <- intersect(dscore::get_itemnames(ins = "ddi", order = "indm"), colnames(data))
 
-# Remove rows with fewer than 3 observations
-# Remove missing values from group and score
-responses <- as.matrix(data[, items])
-sparse <- rowSums(!is.na(responses)) < 3
-idx <- !(is.na(score) | is.na(group) | sparse)
-responses <- responses[idx, ]
-group <- group[idx]
-score <- score[idx]
+# Method 1: Use a numeric group variable
+group <- ifelse(data$sex == "Male", 1, 0)
+focal.names <- 1
 
-library(difR )
-LR <- difLogistic(Data = responses,
-  group = group,
-  focal.names = unique(group),
-  match = score)
-MH <- difMH(Data = responses,
-  group = group,
-  focal.names = unique(group),
-  match = score)
-}
+# Method 2: Use a character group variable
+group <- data$sex
+focal.names <- "Male"
+
+# dt <- calculate_DIF_table(data = data, items = items, group = group,
+#                          focal.names = focal.names)
+
 }

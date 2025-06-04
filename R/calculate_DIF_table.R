@@ -14,6 +14,9 @@
 #' If omitted, the function will use the unique values of the group variable.
 #' @param thr Optional. Threshold for DIF classification using the MH-statistics.
 #' If omitted, the function will use the threshold from the `difGMH()` function.
+#' @param p.adjust.method The adjustment method. Defaults to `"holm"`
+#' @param method Character vector with methods to use for DIF analysis. Either
+#' `"GMH"` or `"genLogistic"`.
 #' @details
 #' The function uses the `"holm"` method for p-value adjustment.
 #'
@@ -33,10 +36,9 @@
 #' group <- data$sex
 #' focal.names <- "Male"
 #'
-#' dt <- calculate_DIF_table(data = data, items = items, group = group,
-#'                          focal.names = focal.names)
+#' # dt <- calculate_DIF_table(data = data, items = items, group = group,
+#' #                          focal.names = focal.names)
 #'
-#' }
 #' @export
 calculate_DIF_table <- function(data, items, group, score = "score",
                                 focal.names = NULL, thr = NULL,
