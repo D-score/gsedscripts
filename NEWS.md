@@ -1,6 +1,10 @@
+# gsedscripts 0.22.0
+
+- Adds script `inst/scripts/models-phase1/293_0_test_phase1`. This script refits the 293_0 model on phase 1 data using better duplicate removal, duckbd dataset, and removal of inter-rater scores.
+
 # gsedscripts 0.21.0
 
-- Add script `inst/scripts/DIF_demo_residuals` 
+- Adds script `inst/scripts/DIF_demo_residuals` 
 
 # gsedscripts 0.20.0
 
