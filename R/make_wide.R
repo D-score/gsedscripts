@@ -23,6 +23,10 @@ make_wide <- function(long,
                       drop_na_age = TRUE,
                       include_return = FALSE,
                       quiet = FALSE) {
+  if (!requireNamespace("fuzzyjoin", quietly = TRUE)) {
+    stop("fuzzyjoin is NOT installed.")
+  }
+
   stopifnot(days >= 0L)
   stopifnot(length(instruments) >= 2L)
   if (any(!instruments %in% c("gpa", "gto", "by3"))) {
@@ -49,7 +53,7 @@ make_wide <- function(long,
   if (any(is.na(long$agedays)) && drop_na_age) {
     n <- nrow(long)
     long <- long |>
-      drop_na("agedays")
+      tidyr::drop_na("agedays")
     if (!quiet) {
       cat("Measurements removed with missing ages: ", n - nrow(long), "\n")
     }
@@ -87,10 +91,11 @@ make_wide <- function(long,
 
   #  fuzzy join within days - FIRST
   phase1 <- sf_first |>
-    difference_left_join(lf_first,
-                         by = c("joinid", "agedays"),
-                         max_dist = days,
-                         distance_col = "dist") |>
+    fuzzyjoin::difference_left_join(
+      lf_first,
+      by = c("joinid", "agedays"),
+      max_dist = days,
+      distance_col = "dist") |>
     ungroup() |>
     rename(cohort = "cohort.x", cohortn = "cohortn.x",
            subjid = "subjid.x", subjido = "subjido.x",
@@ -103,9 +108,10 @@ make_wide <- function(long,
   #  fuzzy join the LF/SF and BSID
   if ("by3" %in% instruments) {
     phase1 <- phase1 |>
-      difference_left_join(bsid_first,
-                           by = c("joinid", "agedays"),
-                           max_dist = days, distance_col = "dist") |>
+      fuzzyjoin::difference_left_join(
+        bsid_first,
+        by = c("joinid", "agedays"),
+        max_dist = days, distance_col = "dist") |>
       ungroup() |>
       rename(cohort = "cohort.x", cohortn = "cohortn.x",
              subjid = "subjid.x", subjido = "subjido.x",
@@ -119,10 +125,11 @@ make_wide <- function(long,
   if (include_return) {
     #  fuzzy join within days - FIRST
     sec <- sf_second |>
-      difference_left_join(lf_second,
-                           by = c("joinid", "agedays"),
-                           max_dist = days,
-                           distance_col = "dist") |>
+      fuzzyjoin::difference_left_join(
+        lf_second,
+        by = c("joinid", "agedays"),
+        max_dist = days,
+        distance_col = "dist") |>
       ungroup() |>
       rename(cohort = "cohort.x", cohortn = "cohortn.x",
              subjid = "subjid.x", subjido = "subjido.x",
@@ -135,9 +142,10 @@ make_wide <- function(long,
     #  fuzzy join the LF/SF and BSID
     if ("by3" %in% instruments) {
       sec <- sec |>
-        difference_left_join(bsid_second,
-                             by = c("joinid", "agedays"),
-                             max_dist = days, distance_col = "dist") |>
+        fuzzyjoin::difference_left_join(
+          bsid_second,
+          by = c("joinid", "agedays"),
+          max_dist = days, distance_col = "dist") |>
         ungroup() |>
         rename(cohort = "cohort.x", cohortn = "cohortn.x",
                subjid = "subjid.x", subjido = "subjido.x",

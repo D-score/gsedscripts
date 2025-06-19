@@ -9,18 +9,22 @@ Description: Holdout for scripts and custom functions needed for the
 License: GPL
 Encoding: UTF-8
 LazyData: true
+Depends:
+    R (>= 4.1.0)
 Imports: 
+    DBI,
     difR (>= 5.1),
     dplyr,
     dscore (>= 1.10.0),
-    fuzzyjoin,
+    duckdb,
     remotes,
     rlang,
-    tidyr,
     utils
 Suggests:
+    childdevdata,
     dmetric (>= 0.68.1),
+    fuzzyjoin,
     gseddata (>= 1.9.0),
     gsedread (>= 0.8.0),
-    childdevdata
+    tidyr
 RoxygenNote: 7.3.2

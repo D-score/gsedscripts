@@ -1,3 +1,7 @@
+- Defines `lean2` objects
+- Adds utilities to convert `lean2` objects
+
+
 # gsedscripts 0.22.0
 
 - Adds script `inst/scripts/models-phase1/293_0_test_phase1`. This script refits the 293_0 model on phase 1 data using better duplicate removal, duckbd dataset, and removal of inter-rater scores.
