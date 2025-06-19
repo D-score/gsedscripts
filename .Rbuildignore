@@ -3,3 +3,4 @@
 ^scripts$
 ^Rmd$
 ^README\.Rmd$
+^docs$
