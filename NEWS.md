@@ -1,6 +1,12 @@
-- Defines `lean2` objects
-- Adds utilities to convert `lean2` objects
+# gsedscripts 0.23.0
 
+Adds starting phase2 scripts:
+
+  - `plot_pass_age.R`
+  - `293_phase1_long.R`
+  - `293_phase2_wide.R`
+
+These scripts replace the private `dmetric` package by the public `dfine` package.
 
 # gsedscripts 0.22.0
 
