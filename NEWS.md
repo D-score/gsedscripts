@@ -8,6 +8,8 @@ Adds starting phase2 scripts:
 
 These scripts replace the private `dmetric` package by the public `dfine` package.
 
+The experimental `lean2` class is no longer supported, and removed.
+
 # gsedscripts 0.22.0
 
 - Adds script `inst/scripts/models-phase1/293_0_test_phase1`. This script refits the 293_0 model on phase 1 data using better duplicate removal, duckbd dataset, and removal of inter-rater scores.
