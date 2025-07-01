@@ -1,52 +1,64 @@
-# This script refits the core model 293_0 for the phase-1 data witj
+# This script refits the core model 293_0 for the phase-1 data with
 # the following changes:
 # + The sample size is slighly lower due to updated duplicate removal
 # + The data are read from the DuckDB database
 # + Responses from inter-rater scores (vist_type 5) are ignored
+#
+# This script alters 293_0_phase1_wide.R by:
+# + Fitting the D-score model to the long matrix (one response per row)
 #
 # Dependencies:
 # + Environmental variable "DUCKPATH_GSED" must be set to the directory
 #   containing database "phase1.duckdb" containing fixed administration
 #   phase1 data
 #
-# Created 20250618 SvB
+# Created   20250618 SvB
+# Modified  20250625 SvB
 
-plot_pdf <- FALSE
+if (nchar(Sys.getenv("LOCAL_DUCKDB")) == 0L) {
+  stop("Environmental variable LOCAL_DUCKDB not set.", call. = FALSE)
+}
 
 # Load required packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
-library("dscore")
-library("ggplot2")
-library("dmetric")
-library("gsedread")
-library("gsedscripts")
 library("dplyr", quietly = TRUE, warn.conflicts = FALSE)
+library("dscore")
+library("dfine")
 library("tidyr", quietly = TRUE, warn.conflicts = FALSE)
 library("testthat", quietly = TRUE, warn.conflicts = FALSE)
-library("difR")
 
-# if (packageVersion("gsedread") < "0.10.0") stop("Needs gsedread 0.10.0")
+if (packageVersion("gsedread") < "0.13.0") stop("Needs gsedread 0.13.0")
 
 #
-#  A.  Read phase1 database into responses and visits objects
+#  A.  Read fixed form Phase 1 data responses and visits
 #
-dbfile <- file.path(Sys.getenv("DUCKPATH_GSED"), "phase1.duckdb")
+dbfile <- file.path(Sys.getenv("LOCAL_DUCKDB"), "fixed.duckdb")
 con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
 dbListTables(con)
-responses <- dbReadTable(con, "responses")
 visits <- dbReadTable(con, "visits")
-dbDisconnect(con, shutdown = TRUE)
+responses <- dbReadTable(con, "responses")
+dbDisconnect(con)
 
 #
-#  B. Identify pairs of LF-SF records occurring within four days
-#     Ignore any inter-rater scores (vist_type 5) to prevent duplicate matches
+#  B.  Subset to phase 1 LF and SF data
+#      Ignore any inter-rater scores (vist_type 5) to prevent duplicate matches
 #
 
 visits <- visits |>
-  filter(vist_type != 5L) |>  # skip inter-rater scores
-  select(gsed_id, agedays, ins, vist_type) |>
-  arrange(gsed_id, agedays, ins, vist_type) |>
-  group_by(gsed_id) |>
+  filter(phase == 1L & ins %in% c("lf", "sf") & vist_type != 5L)
+responses <- semi_join(
+  responses,
+  visits,
+  by = c("subjid", "agedays", "vist_type"))
+
+#
+#  C. Identify pairs of LF-SF records occurring within four days
+#
+
+visits <- visits |>
+  select(subjid, agedays, ins, vist_type) |>
+  arrange(subjid, agedays, ins, vist_type) |>
+  group_by(subjid) |>
   mutate(sf_order = if_else(ins == "sf", row_number(), NA_integer_)) |>
   mutate(sf_order = if_else(ins == "sf", cumsum(ins == "sf"), NA_integer_)) |>
   ungroup()
@@ -54,14 +66,14 @@ visits <- visits |>
 # Find pair number (0, 1, 2, 3) for each SF record
 sf_rows <- visits |>
   filter(ins == "sf") |>
-  select(gsed_id, sf_agedays = agedays, sf_order)
+  select(subjid, sf_agedays = agedays, sf_order)
 lf_rows <- visits |>
   filter(ins == "lf") |>
-  select(gsed_id, lf_agedays = agedays)
+  select(subjid, lf_agedays = agedays)
 pairs <- sf_rows |>
-  left_join(lf_rows, by = "gsed_id", relationship = "many-to-many") |>
+  left_join(lf_rows, by = "subjid", relationship = "many-to-many") |>
   mutate(diff = abs(sf_agedays - lf_agedays)) |>
-  group_by(gsed_id, sf_order) |>
+  group_by(subjid, sf_order) |>
   slice_min(order_by = diff, n = 1L, with_ties = FALSE) |>
   ungroup() |>
   mutate(pair = ifelse(diff > 4L | is.na(diff), 0L, sf_order))
@@ -70,19 +82,19 @@ pairs <- sf_rows |>
 items_sf <- get_itemnames(ins = "gpa", order = "indm")
 items_lf <- get_itemnames(ins = "gto")
 responses <- responses |>
-  filter(vist_type != 5L & item %in% c(items_sf, items_lf)) # skip inter-rater scores
+  filter(item %in% c(items_sf, items_lf))
 responses_sf <- responses |>
   filter(item %in% items_sf) |>
-  left_join(pairs, by = join_by(gsed_id, agedays == sf_agedays)) |>
+  left_join(pairs, by = join_by(subjid, agedays == sf_agedays)) |>
   mutate(ins = "sf") |>
-  select(gsed_id, agedays, pair, ins, item, response)
+  select(subjid, agedays, pair, ins, item, response)
 responses_lf <- responses |>
   filter(item %in% items_lf) |>
   left_join(pairs |> filter(pair > 0),
-            by = join_by(gsed_id, agedays == lf_agedays)) |>
+            by = join_by(subjid, agedays == lf_agedays)) |>
   mutate(pair = ifelse(is.na(pair), -1L, pair),
          ins = "lf") |>
-  select(gsed_id, agedays, pair, ins, item, response)
+  select(subjid, agedays, pair, ins, item, response)
 
 # Check for zero duplicate matches
 nrow(responses_sf) + nrow(responses_lf) - nrow(responses) == 0
@@ -100,81 +112,51 @@ responses <- bind_rows(responses_sf, responses_lf)
 #  1-3: Pair number of SF-LF match
 
 #
-#  C. Create wide format that puts items from a SF-LF pair on the same row
-#
-
-data <- responses |>
-  select(gsed_id, agedays, pair, ins, item, response) |>
-  pivot_wider(names_from = c(item), values_from = response,
-              id_cols = c(gsed_id, pair)) |>
-  arrange(gsed_id, pair)
-agedays_info <- responses |>
-  distinct(gsed_id, pair, ins, agedays) |>
-  pivot_wider(names_from = ins, values_from = agedays,
-              names_prefix = "agedays_")
-data <- data |>
-  left_join(agedays_info, by = c("gsed_id", "pair")) |>
-  select(gsed_id, pair, starts_with("agedays_"), any_of(items_sf), any_of(items_lf))
-
-# wide: 5961 visits (measurements), 297 columns (2 + 2 + 138 + 155)
-# wide: 4374 unique gsed_id (=children)
-cat("dim(data):", dim(data), "\n")
-
-#
 #  D. Select items with at least 10 observation in both categories
 #
 
 min_n <- 10
-id_cols <- c("gsed_id", "pair", "agedays_sf", "agedays_lf")
-items <- setdiff(colnames(data), id_cols)
-counts <- sapply(data[items], function(x) {
-  c(count_0 = sum(x == 0, na.rm = TRUE),
-    count_1 = sum(x == 1, na.rm = TRUE))
-})
-counts_df <- as.data.frame(t(counts))
-counts_df$item <- rownames(counts_df)
-valid_items <- counts_df |>
-  filter(count_0 >= min_n, count_1 >= min_n) |>
+items <- c(get_itemnames(ins = "gpa", order = "indm"),
+           get_itemnames(ins = "gto"))
+valid_items <- responses |>
+  filter(response %in% c(0, 1)) |>
+  count(item, response) |>
+  pivot_wider(names_from = response, values_from = n,
+              names_prefix = "n_", values_fill = 0) |>
+  filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
-data <- data |>
-  select(all_of(id_cols), all_of(valid_items))
+items <- intersect(items, valid_items)
+responses <- responses |>
+  filter(item %in% items)
 
 #
-#  E. Specify anchors to define the D-score scale
+#  E. Estimate tau of SF and LF items by a single group design
 #
+
+fit <- rasch(data = responses,
+             visit_var = c("subjid", "pair"),
+             items = items)
+
+#
+#  F. Calculate the dmodel object
+#
+
+# Define agedays
+responses <- responses |>
+  group_by(subjid, pair) |>
+  mutate(agedays = mean(agedays, na.rm = TRUE)) |>
+  ungroup()
 
 # 20: Lift head 45 degrees
 # 40: Moves from lying to sitting
-anchor <- c(20, 40)
-names(anchor) <- c("gtogmd001", "gtogmd026")
+model <- calculate_dmodel(data = responses,
+                         fit = fit,
+                         name = "phase1_long",
+                         anchors = c(gtogmd001 = 20, gtogmd026 = 40))
 
-# restrict transform
-transform <- builtin_keys |>
-  filter(key == "gsed2406") |>
-  select(all_of(c("intercept", "slope"))) |>
-  unlist()
-
-#
-#  F. Estimate tau of SF and LF items by a single group design
-#
-
-data <- data |>
-  rename(subjid = gsed_id,
-         agedays = agedays_sf)
-varlist <- list(adm = c("subjid", "agedays"),
-                items = valid_items)
-model_name <- paste(length(valid_items), "0", sep = "_")
-model_name <- paste0(model_name, "_test_phase1")
-model <- fit_dmodel(varlist = varlist,
-                    data = data,
-                    name = model_name,
-                    anchors = anchor,
-                    #                    transform = transform,
-                    data_package = "",
-                    verbose = TRUE)
 
 # Store and reload model
-path <- path.expand(file.path("~/project/gsed/phase2/test", model_name))
+path <- path.expand(file.path("~/project/gsed/phase2/models", model$name))
 path_old <- "/Users/buurensv/Dropbox/Project/gsed/phase1/202408/293_0"
 if (!dir.exists(path)) dir.create(path)
 saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
@@ -225,3 +207,5 @@ test_that("Anchors items are 20 and 40", {
   expect_equal(ib[ib$item == "gtogmd001", "tau"], 20, tolerance = 0.001)
   expect_equal(ib[ib$item == "gtogmd026", "tau"], 40, tolerance = 0.001)
 })
+
+
