@@ -1,14 +1,14 @@
 # gsedscripts 0.23.0
 
-Adds starting phase2 scripts:
+- Adds starting phase2 scripts:
 
   - `plot_pass_age.R`
   - `293_phase1_long.R`
   - `293_phase2_wide.R`
 
-These scripts replace the private `dmetric` package by the public `dfine` package.
+- These scripts replace the private `dmetric` package by the public `dfine` package.
 
-The experimental `lean2` class is no longer supported, and removed.
+- The experimental `lean2` class is no longer supported, and removed.
 
 # gsedscripts 0.22.0
 
