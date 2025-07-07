@@ -7,7 +7,7 @@
 #   containing database "fixed.duckdb" containing fixed administration data
 #
 # Created   20250630 SvB
-# Modified  20250701 SvB
+# Modified  20250707 SvB
 
 if (nchar(Sys.getenv("LOCAL_DUCKDB")) == 0L) {
   stop("Environmental variable LOCAL_DUCKDB not set.", call. = FALSE)
@@ -101,6 +101,11 @@ items2 <- intersect(items_bsid, valid_items)
 responses2 <- responses |>
   filter(item %in% items2)
 
+# For BSID Phase 1&2
+# table(responses2$vist_type, responses2$country, useNA = "al")
+#         BGD   BRA   CIV   NLD   PAK   TZA  <NA>
+#  <NA> 12492 42597 11424  1861 10838 13475     0
+
 #
 # C3. Combine responses
 #
@@ -122,7 +127,7 @@ data_rug <- data_rug[idx, ]
 
 # Calculate summary statistics
 pass <- data_rug |>
-  mutate(agegp = cut(agemos, breaks = seq(0, 42, 1))) |>
+  mutate(agegp = cut(agemos, breaks = seq(0, 42, 6))) |>
   group_by(item, cohort, agegp) |>
   summarise(
     p = round(100 * mean(response, na.rm = TRUE)),
@@ -151,8 +156,8 @@ theme_set(theme_light())
 plots_sf <- plot_p_a_item(
   pass = pass, data_rug = data_rug,
   items = items_sf,
-  x.limits = c(0, 48),
-  x.breaks = seq(0, 48, 6),
+  xlim = c(0, 48),
+  xbreaks = seq(0, 48, 6),
   label.trunc = 80,
   col.manual = col_manual)
 
@@ -160,8 +165,8 @@ plots_sf <- plot_p_a_item(
 plots_lf <- plot_p_a_item(
   pass = pass, data_rug = data_rug,
   items = items_lf,
-  x.limits = c(0, 48),
-  x.breaks = seq(0, 48, 6),
+  xlim = c(0, 48),
+  xbreaks = seq(0, 48, 6),
   label.trunc = 80,
   col.manual = col_manual)
 
@@ -169,11 +174,11 @@ plots_lf <- plot_p_a_item(
 plots_bsid <- plot_p_a_item(
   pass = pass, data_rug = data_rug,
   items = items_bsid,
-  x.limits = c(0, 48),
-  x.breaks = seq(0, 48, 6),
+  xlim = c(0, 48),
+  xbreaks = seq(0, 48, 6),
   label.trunc = 80,
   col.manual = col_manual,
-  min_n = 5)
+  min_n = 3)
 
 #
 # F.  Save plots as PDF
