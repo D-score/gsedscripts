@@ -248,15 +248,6 @@ pass <- data_rug |>
 # E.  Plotting
 #
 
-col_manual <- c(
-  "GSED-BGD" = "#A6001A",  # deeper red (rich crimson/burgundy)
-  "GSED-BRA" = "#002776",  # navy blue (flag globe)
-  "GSED-CHN" = "#DE2010",  # bright red (saturated)
-  "GSED-CIV" = "#1BAF5F",  # cool green (teal-shifted for distinctiveness)
-  "GSED-NLD" = "#F77F33",  # Dutch orange
-  "GSED-PAK" = "#166A2F",  # forest green
-  "GSED-TZA" = "#47A1D8"   # light blue
-)
 theme_set(theme_light())
 
 # SF
@@ -269,7 +260,7 @@ plots_sf <- dfine::plot_p_d_item(
   xlim = c(0, 100),
   xbreaks = seq(10, 90, 10),
   label.trunc = 80,
-  col.manual = col_manual)
+  col.manual = get_palette("cohort"))
 
 # LF
 plots_lf <- plot_p_d_item(
@@ -281,7 +272,7 @@ plots_lf <- plot_p_d_item(
   xlim = c(0, 100),
   xbreaks = seq(10, 90, 10),
   label.trunc = 80,
-  col.manual = col_manual)
+  col.manual = get_palette("cohort"))
 
 # BSID
 # plots_bsid <- plot_p_d_item(
@@ -292,7 +283,7 @@ plots_lf <- plot_p_d_item(
 #   xlim = c(0, 100),
 #   xbreaks = seq(10, 90, 10),
 #   label.trunc = 80,
-#   col.manual = col_manual,
+#   col.manual = get_palette("cohort"),
 #   min_n = 5)
 
 #
