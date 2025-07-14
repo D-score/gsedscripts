@@ -3,14 +3,14 @@
 # 2) BSID, phase 1.
 #
 # Dependencies:
-# + Environmental variable "DUCKPATH_GSED" must be set to the directory
-#   containing database "fixed.duckdb" containing fixed administration data
+# + Environmental variable "GSED_PHASE2" must be set to the directory
+#   containing database "data/fixed.duckdb" containing fixed administration data
 #
 # Created   20250630 SvB
-# Modified  20250707 SvB
+# Modified  20250714 SvB
 
-if (nchar(Sys.getenv("LOCAL_DUCKDB")) == 0L) {
-  stop("Environmental variable LOCAL_DUCKDB not set.", call. = FALSE)
+if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
+  stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
 }
 
 # Install required packages if not already installed
@@ -27,14 +27,14 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.4.0") stop("Needs dfine 0.4.0")
+if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
 if (packageVersion("dscore") < "1.10.0") stop("Needs dscore 1.10.0")
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
 #
 
-dbfile <- file.path(Sys.getenv("LOCAL_DUCKDB"), "fixed.duckdb")
+dbfile <- file.path(Sys.getenv("GSED_PHASE2"), "data/fixed.duckdb")
 con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
 dbListTables(con)
 visits <- dbReadTable(con, "visits")
@@ -118,8 +118,8 @@ responses <- bind_rows(responses1, responses2)
 
 # Define data for rug plot
 data_rug <- responses |>
-  mutate(agemos = agedays / 365.25 * 12) |>
-  select(item, response, agemos, cohort)
+  mutate(a = agedays / 365.25 * 12) |>
+  select(item, response, a, cohort)
 
 # Permute rows in data_rug plot better plotting
 idx <- sample(1:nrow(data_rug))
@@ -127,11 +127,11 @@ data_rug <- data_rug[idx, ]
 
 # Calculate summary statistics
 pass <- data_rug |>
-  mutate(agegp = cut(agemos, breaks = seq(0, 42, 6))) |>
+  mutate(agegp = cut(a, breaks = seq(0, 42, 2))) |>
   group_by(item, cohort, agegp) |>
   summarise(
     p = round(100 * mean(response, na.rm = TRUE)),
-    a = mean(agemos, na.rm = TRUE),
+    a = mean(a, na.rm = TRUE),
     n = n(),
     .groups = "drop"
   ) |>
@@ -145,38 +145,42 @@ col_manual <- dfine::get_palette("cohort")
 theme_set(theme_light())
 
 # SF
-plots_sf <- plot_p_a_item(
-  pass = pass, data_rug = data_rug,
+plots_sf <- plot_pass(
+  pass = pass,
+  data_rug = data_rug,
   items = items_sf,
+  x_var = "a",
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
-  label.trunc = 80,
-  col.manual = col_manual)
+  label_trunc = 80,
+  col_manual = col_manual)
 
 # LF
-plots_lf <- plot_p_a_item(
-  pass = pass, data_rug = data_rug,
+plots_lf <- plot_pass(
+  pass = pass,
+  data_rug = data_rug,
   items = items_lf,
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
-  label.trunc = 80,
-  col.manual = col_manual)
+  label_trunc = 80,
+  col_manual = col_manual)
 
 # BSID
-plots_bsid <- plot_p_a_item(
-  pass = pass, data_rug = data_rug,
+plots_bsid <- plot_pass(
+  pass = pass,
+  data_rug = data_rug,
   items = items_bsid,
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
-  label.trunc = 80,
-  col.manual = col_manual,
+  label_trunc = 80,
+  col_manual = col_manual,
   min_n = 3)
 
 #
 # F.  Save plots as PDF
 #
 
-path <- file.path("~/project/gsed/phase2/descriptives")
+path <- file.path(Sys.getenv("GSED_PHASE2"), "descriptives")
 device <- "pdf"
 
 # SF

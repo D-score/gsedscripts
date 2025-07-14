@@ -9,15 +9,16 @@
 # 2) The key and population correspond to the defaults used in dscore 0.10.0
 #    These are key = "gsed2406" and population = "preliminary_standards".
 #
-# Dependencies:
-# + Environmental variable "DUCKPATH_GSED" must be set to the directory
-#   containing database "fixed.duckdb" containing fixed administration data
+# Local dependencies:
+# + Environmental variable "GSED_PHASE2" must be set to your local
+#   working directory for PHASE 2
+# + {GSED_PHASE2}/data/fixed.duckdb must contain the fixed form item data
 #
 # Created   20250630 SvB
-# Modified  20250704 SvB
+# Modified  20250714 SvB
 
-if (nchar(Sys.getenv("LOCAL_DUCKDB")) == 0L) {
-  stop("Environmental variable LOCAL_DUCKDB not set.", call. = FALSE)
+if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
+  stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
 }
 
 # Install required packages if not already installed
@@ -34,14 +35,14 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.4.0") stop("Needs dfine 0.4.0")
+if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
 if (packageVersion("dscore") < "1.10.0") stop("Needs dscore 1.10.0")
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
 #
 
-dbfile <- file.path(Sys.getenv("LOCAL_DUCKDB"), "fixed.duckdb")
+dbfile <- file.path(Sys.getenv("GSED_PHASE2"), "data/fixed.duckdb")
 con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
 dbListTables(con)
 visits <- dbReadTable(con, "visits")
@@ -54,7 +55,7 @@ dbDisconnect(con)
 #
 
 visits <- visits |>
-  filter(ins %in% c("lf", "sf") & vist_type != 5L)
+  filter(ins %in% c("lf", "sf", "bsid") & (is.na(vist_type) | vist_type != 5L))
 responses <- semi_join(
   responses,
   visits,
@@ -117,8 +118,10 @@ pairs <- sf_rows |>
 # Merge pair number with with response
 items_sf <- get_itemnames(ins = "gpa", order = "indm")
 items_lf <- get_itemnames(ins = "gto")
+items_bsid <- get_itemnames(ins = "by3")
+
 responses <- responses |>
-  filter(item %in% c(items_sf, items_lf))
+  filter(item %in% c(items_sf, items_lf, items_bsid))
 responses_sf <- responses |>
   filter(item %in% items_sf) |>
   left_join(pairs, by = join_by(subjid, agedays == sf_agedays)) |>
@@ -131,29 +134,88 @@ responses_lf <- responses |>
   mutate(pair = ifelse(is.na(pair), -agedays, pair),
          ins = "lf") |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
+responses_bsid <- responses |>
+  filter(item %in% items_bsid) |>
+  mutate(pair = NA_integer_,
+         ins = "bsid") |>
+  select(cohort, country, subjid, agedays, pair, ins, item, response)
 
 # Check for zero duplicate matches
-nrow(responses_sf) + nrow(responses_lf) - nrow(responses) == 0
+nrow(responses_sf) + nrow(responses_lf) + nrow(responses_bsid) - nrow(responses) == 0
 
 # Recreate with the new pair number
-responses <- bind_rows(responses_sf, responses_lf)
+responses <- bind_rows(responses_sf, responses_lf, responses_bsid)
 
-# table(responses$pair, useNA = "al")
+# tail(table(responses$pair, useNA = "al"), 8)
 #
-#   -10     -2     -1      1      2      3   <NA>
-#   5907   2018   7583 689313 162964   8615      0
+# -17     -6     -2     -1      1      2      3   <NA>
+#  27     21   2018   7583 689313 162964   8615  96203
+#
 # < -5: no match for LF
 # -2, -1: no match for SF
 # 1, 2, 3: matched SF and LF
+# <NA>: BSID items
 
 responses <- responses |>
   distinct(cohort, country, subjid, agedays, pair, ins, item, response)
+
 #
-#  D. Create wide format that puts items from a SF-LF pair on the same row
+#  E1. Select SF/LF items with at least 10 observations in both categories
 #
 
-data <- responses |>
-  select(subjid, agedays, pair, ins, item, response) |>
+min_n <- 10
+items_sflf <- c(get_itemnames(ins = "gpa", order = "indm"),
+                get_itemnames(ins = "gto"))
+valid_items <- responses |>
+  filter(response %in% c(0, 1)) |>
+  count(item, response) |>
+  pivot_wider(names_from = response, values_from = n,
+              names_prefix = "n_", values_fill = 0) |>
+  filter(n_0 >= min_n, n_1 >= min_n) |>
+  pull(item)
+items_sflf <- intersect(items_sflf, valid_items)
+responses1 <- responses |>
+  filter(item %in% items_sflf)
+
+# For SF & LF Phase 1&2
+#
+# > table(responses1$country)
+#    BGD    BRA    CHN    CIV    NLD    PAK    TZA
+# 159171 139600  84809 105375  42399 180702 164277
+
+#
+#  E2. Select BSID items with at least 3 observations in both categories
+#
+
+min_n <- 3
+items_bsid <- get_itemnames(ins = "by3")
+valid_items <- responses |>
+  filter(response %in% c(0, 1)) |>
+  count(item, response) |>
+  pivot_wider(names_from = response, values_from = n,
+              names_prefix = "n_", values_fill = 0) |>
+  filter(n_0 >= min_n, n_1 >= min_n) |>
+  pull(item)
+items_bsid <- intersect(items_bsid, valid_items)
+responses2 <- responses |>
+  filter(item %in% items_bsid)
+
+# For BSID Phase 1&2
+#
+# table(responses2$country)
+#   BGD   BRA   CIV   NLD   PAK   TZA
+# 12492 42296 11307  1861 10838 13475
+#
+
+responses <- bind_rows(responses1, responses2)
+
+
+#
+#  F. Create wide format that puts items from a SF-LF pair on the same row
+#
+
+data <- responses1 |>
+  select(subjid, pair, item, response) |>
   pivot_wider(names_from = c(item), values_from = response,
               id_cols = c(subjid, pair)) |>
   arrange(subjid, pair)
@@ -163,54 +225,53 @@ data <- responses |>
 #   dplyr::summarise(n = dplyr::n(), .by = c(subjid, pair, item)) |>
 #   dplyr::filter(n > 1L)
 
-agedays_info <- responses |>
+agedays_info <- responses1 |>
   distinct(subjid, pair, ins, agedays) |>
   pivot_wider(names_from = ins, values_from = agedays,
               names_prefix = "agedays_")
 data <- data |>
   left_join(agedays_info, by = c("subjid", "pair")) |>
-  select(subjid, pair, starts_with("agedays_"), any_of(items_sf), any_of(items_lf))
+  mutate(agedays = rowMeans(across(c(agedays_sf, agedays_lf)), na.rm = TRUE)) |>
+  select(subjid, pair, agedays, any_of(items_sf), any_of(items_lf))
 
 cat("dim(data):", dim(data), "\n")
-# wide: 11461 visits (measurements), 297 columns (2 + 2 + 138 + 155)
+# wide: 11461 visits (measurements), 296 columns (2 + 1 + 138 + 155)
 # wide: 9280 unique subjid (=children)
 
 #
-#  E. Select items with at least 10 observation in both categories
+#  G1. Calculate D-score for all SF + LF items combined
+#      using the gsed2406 key and preliminary_standards population
 #
 
-min_n <- 10
-id_cols <- c("subjid", "pair", "agedays_sf", "agedays_lf")
-items <- setdiff(colnames(data), id_cols)
-counts <- sapply(data[items], function(x) {
-  c(count_0 = sum(x == 0, na.rm = TRUE),
-    count_1 = sum(x == 1, na.rm = TRUE))
-})
-counts_df <- as.data.frame(t(counts))
-counts_df$item <- rownames(counts_df)
-valid_items <- counts_df |>
-  filter(count_0 >= min_n, count_1 >= min_n) |>
-  pull(item)
-data <- data |>
-  select(all_of(id_cols), all_of(valid_items))
-
-#
-#  F. Calculate combined agedays for SF and LF
-#
-
-data <- data |>
-  mutate(agedays = rowMeans(across(c(agedays_sf, agedays_lf)), na.rm = TRUE))
-
-#
-#  G. Calculate D-score for all SF + LF items combined
-#     using the gsed2406 key and preliminary_standards population
-#
-
-ds <- dscore(data = data, items = items,
+ds <- dscore(data = data, items = items_sflf,
              xname = "agedays", xunit = "days",
              key = "gsed2406", population = "preliminary_standards",
              metric = "dscore")
-data <- bind_cols(data, ds)
+
+ds_sflf <- bind_cols(select(data, subjid, pair, agedays), ds) |>
+  mutate(ins = "sflf")
+
+#
+#  G2. Calculate D-score for all BSID combined
+#      using the gsed2406 key and preliminary_standards population
+#
+
+data_bsid <- responses2 |>
+  select(subjid, pair, agedays, ins, item, response) |>
+  pivot_wider(names_from = c(item), values_from = response,
+              id_cols = c(subjid, pair, agedays, ins)) |>
+  arrange(subjid, agedays)
+ds <- dscore(data = data_bsid, items = items_bsid,
+             xname = "agedays", xunit = "days",
+             key = "gsed2406", population = "preliminary_standards",
+             metric = "dscore")
+ds_bsid <- bind_cols(select(data_bsid, subjid, pair, agedays, ins), ds)
+
+# NOTE: D-score from BSID cannot be calculated for very young children
+# due to lack of item overlap.
+
+# Combine D-scores from LFSF and BSID
+data <- bind_rows(ds_sflf, ds_bsid)
 
 #
 #  H. Extend responses matrix with the D-score
@@ -251,48 +312,42 @@ pass <- data_rug |>
 theme_set(theme_light())
 
 # SF
-plots_sf <- dfine::plot_p_d_item(
+plots_sf <- dfine::plot_pass(
   pass = pass,
   data_rug = data_rug,
   items = items_sf,
   x_var = "d",
   model_name = "gsed2406",
-  xlim = c(0, 100),
-  xbreaks = seq(10, 90, 10),
-  label.trunc = 80,
-  col.manual = get_palette("cohort"))
+  label_trunc = 80,
+  col_manual = get_palette("cohort"))
 
 # LF
-plots_lf <- plot_p_d_item(
+plots_lf <- dfine::plot_pass(
   pass = pass,
   data_rug = data_rug,
   items = items_lf,
   x_var = "d",
   model_name = "Key: gsed2406",
-  xlim = c(0, 100),
-  xbreaks = seq(10, 90, 10),
-  label.trunc = 80,
-  col.manual = get_palette("cohort"))
+  label_trunc = 80,
+  col_manual = get_palette("cohort"))
 
 # BSID
-# plots_bsid <- plot_p_d_item(
-#   pass = pass, data_rug = data_rug,
-#   items = items_bsid,
-#   x_var = "d",
-#   model_name = "Key: gsed2406",
-#   xlim = c(0, 100),
-#   xbreaks = seq(10, 90, 10),
-#   label.trunc = 80,
-#   col.manual = get_palette("cohort"),
-#   min_n = 5)
+plots_bsid <- dfine::plot_pass(
+  pass = pass,
+  data_rug = data_rug,
+  items = items_bsid,
+  x_var = "d",
+  model_name = "Key: gsed2406",
+  label_trunc = 80,
+  col_manual = get_palette("cohort"),
+  min_n = 5)
 
 #
 # F.  Save plots as PDF
 #
 
-path <- file.path("~/project/gsed/phase2/descriptives")
+path <- file.path(Sys.getenv("GSED_PHASE2"), "descriptives")
 device <- "pdf"
-
 # SF
 if (!is.null(file) & device == "pdf") {
   file <- file.path(path, "gpa_items_by_dscore.pdf")
@@ -312,15 +367,13 @@ if (!is.null(file) & device == "pdf") {
 }
 
 # # BSID
-# if (!is.null(file) & device == "pdf") {
-#   file <- file.path(path, "by3_items_by_dscore.pdf")
-#   pdf(file, onefile = TRUE, width = 10, height = 5)
-#   lapply(plots_bsid, print)
-#   message("Saved to: ", file)
-#   dev.off()
-# }
-
-
+if (!is.null(file) & device == "pdf") {
+  file <- file.path(path, "by3_items_by_dscore.pdf")
+  pdf(file, onefile = TRUE, width = 10, height = 5)
+  lapply(plots_bsid, print)
+  message("Saved to: ", file)
+  dev.off()
+}
 
 # Plot D-score against age in months
 
@@ -333,7 +386,7 @@ dba <- ggplot(reduced, aes(y = d, x = agemos, color = cohort)) +
   geom_point(size = 0.5) +
   geom_smooth(method = "loess", se = FALSE, span = 0.75) +
   labs(y = "D-score", x = "Age (months)") +
-  scale_color_manual(values = col_manual) +
+  scale_color_manual(values = get_palette("cohort")) +
   scale_y_continuous(
     breaks = seq(0, 90, 10),
   ) +
