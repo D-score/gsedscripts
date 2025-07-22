@@ -4,10 +4,14 @@
 \alias{calculate_DIF_classification}
 \title{Calculate Differential Item Functioning (DIF) classification table}
 \usage{
-calculate_DIF_classification(responses)
+calculate_DIF_classification(responses, model = NULL)
 }
 \arguments{
 \item{responses}{A data frame containing the responses to the items.}
+
+\item{model}{Optional. A `dmodel` object used to calculate the `dscore`.
+If not specified, the function will calculate the D-score using the
+default key.}
 }
 \value{
 A data frame with items and their classification for DIF.

@@ -5,18 +5,23 @@
 # + Responses from inter-rater scores (vist_type 5) are ignored
 #
 # Dependencies:
-# + Environmental variable "LOCAL_DUCKDB" must be set to the directory
-#   containing database "fixed.duckdb" containing fixed administration
-#   phase1 & phase2 data
+# + Environmental variable "GSED_PHASE1" must be set to the local directory
+#   containing the models for phase 1 (will be used only for reading)
+# + Environmental variable "GSED_PHASE2" must be set to the local directory
+#   containing the models for phase 2 (will be used for writing)
 #
 # Created   20250618 SvB
-# Modified  20250625 SvB
+# Modified  20250713 SvB
 
 plot_pdf <- FALSE
 
-if (nchar(Sys.getenv("LOCAL_DUCKDB")) == 0L) {
-  stop("Environmental variable LOCAL_DUCKDB not set.", call. = FALSE)
+if (nchar(Sys.getenv("GSED_PHASE1")) == 0L) {
+  stop("Environmental variable GSED_PHASE1 not set.", call. = FALSE)
 }
+if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
+  stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
+}
+
 
 # Load required packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
@@ -27,12 +32,13 @@ library("tidyr", quietly = TRUE, warn.conflicts = FALSE)
 library("testthat", quietly = TRUE, warn.conflicts = FALSE)
 library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 
-if (packageVersion("gsedread") < "0.14.0") stop("Needs gsedread 0.14.0")
+if (packageVersion("gsedread") < "0.16.0") stop("Needs gsedread 0.16.0")
+if (packageVersion("dfine") < "0.9.0") stop("Needs gsedread 0.9.0")
 
 #
 #  A.  Read fixed form Phase 1 data responses and visits
 #
-dbfile <- file.path(Sys.getenv("LOCAL_DUCKDB"), "fixed.duckdb")
+dbfile <- file.path(Sys.getenv("GSED_PHASE2"), "data/fixed.duckdb")
 con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
 dbListTables(con)
 visits <- dbReadTable(con, "visits")
@@ -173,14 +179,15 @@ model <- calculate_dmodel(data = data,
                           anchors = c(gtogmd001 = 20, gtogmd026 = 40))
 
 
-# Store and reload model
-path <- path.expand(file.path("~/project/gsed/phase2/models", model$name))
-path_old <- "/Users/buurensv/Dropbox/Project/gsed/phase1/202408/293_0"
-if (!dir.exists(path)) dir.create(path)
-saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
-saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
+# Store and (re)load models
+path_old <- file.path(Sys.getenv("GSED_PHASE1"), "202408/293_0")
 model_old <- readRDS(file.path(path_old, "model.Rds"))
 data_old <- readRDS(file.path(path_old, "data.Rds"))
+
+path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model$name)
+if (!dir.exists(path_new)) dir.create(path_new)
+saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
+
 
 #
 #  H. Test for proper D-score vs logit alignment
@@ -234,7 +241,7 @@ test_that("Anchors items are 20 and 40", {
 
 # Add cohort field to data
 
-data <- data |>
+model$dscore$cohort <- data |>
   mutate(
     isonum = as.integer(substr(subjid, 1, 3)),
     ctry = case_when(
@@ -246,12 +253,13 @@ data <- data |>
       isonum == 384L ~ "CIV",
       isonum == 528L ~ "NLD",
       TRUE ~ NA_character_),
-    cohort = paste0("GSED-", ctry),
-  )
+    cohort = paste0("GSED-", ctry)
+  ) |>
+  pull(cohort)
 
 if (plot_pdf) {
   theme_set(theme_light())
-  col.manual <- dmetric::get_palette("study", package = "gseddata")
+  col.manual <- dfine::get_palette("cohort")
   r <- dmetric::plot_dmodel(data = data,
                             model = model,
                             path = path,

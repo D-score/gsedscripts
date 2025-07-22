@@ -15,7 +15,7 @@
 # + {GSED_PHASE2}/data/fixed.duckdb must contain the fixed form item data
 #
 # Created   20250630 SvB
-# Modified  20250714 SvB
+# Modified  20250721 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
   stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
@@ -36,7 +36,7 @@ library("dfine")
 library("dscore")
 
 if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
-if (packageVersion("dscore") < "1.10.0") stop("Needs dscore 1.10.0")
+if (packageVersion("dscore") < "1.10.4") stop("Needs dscore 1.10.4")
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
@@ -116,8 +116,8 @@ pairs <- sf_rows |>
   mutate(pair = ifelse(diff > 4L | is.na(diff), -sf_order, sf_order))
 
 # Merge pair number with with response
-items_sf <- get_itemnames(ins = "gpa", order = "indm")
-items_lf <- get_itemnames(ins = "gto")
+items_sf <- get_itemnames(ins = "sf_", order = "indm")
+items_lf <- get_itemnames(ins = c("lfa", "lfb", "lfc"))
 items_bsid <- get_itemnames(ins = "by3")
 
 responses <- responses |>
@@ -164,8 +164,8 @@ responses <- responses |>
 #
 
 min_n <- 10
-items_sflf <- c(get_itemnames(ins = "gpa", order = "indm"),
-                get_itemnames(ins = "gto"))
+items_sflf <- c(get_itemnames(ins = "sf_", order = "indm"),
+                get_itemnames(ins = c("lfa", "lfb", "lfc")))
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
@@ -243,6 +243,8 @@ cat("dim(data):", dim(data), "\n")
 #      using the gsed2406 key and preliminary_standards population
 #
 
+colnames(data) <- dscore::rename_vector(colnames(data), lexin = "gsed4", lexout = "gsed3")
+items_sflf <- rename_vector(items_sflf, lexin = "gsed4", lexout = "gsed3")
 ds <- dscore(data = data, items = items_sflf,
              xname = "agedays", xunit = "days",
              key = "gsed2406", population = "preliminary_standards",
@@ -350,7 +352,7 @@ path <- file.path(Sys.getenv("GSED_PHASE2"), "descriptives")
 device <- "pdf"
 # SF
 if (!is.null(file) & device == "pdf") {
-  file <- file.path(path, "gpa_items_by_dscore.pdf")
+  file <- file.path(path, "sf_items_by_dscore.pdf")
   pdf(file, onefile = TRUE, width = 10, height = 5)
   lapply(plots_sf, print)
   message("Saved to: ", file)
@@ -359,7 +361,7 @@ if (!is.null(file) & device == "pdf") {
 
 # LF
 if (!is.null(file) & device == "pdf") {
-  file <- file.path(path, "gto_items_by_dscore.pdf")
+  file <- file.path(path, "lf_items_by_dscore.pdf")
   pdf(file, onefile = TRUE, width = 10, height = 5)
   lapply(plots_lf, print)
   message("Saved to: ", file)

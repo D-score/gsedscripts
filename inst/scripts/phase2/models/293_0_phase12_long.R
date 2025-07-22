@@ -1,25 +1,10 @@
-# This script fits the core model 293_0 for the phase-1 & 2 data
+# This script refits the core model 293_0 for the phase-1&2 data
 #
 # Dependencies:
 # + Environmental variable "GSED_PHASE1" must be set to the local directory
 #   containing the models for phase 1 (will be used only for reading)
 # + Environmental variable "GSED_PHASE2" must be set to the local directory
 #   containing the models for phase 2 (will be used for writing)
-#
-# This script can be called from another script by setting the following
-# global variables:
-# - phases: vector of phases to include (default: c(1, 2))
-# - cohorts: vector of cohorts to include (default: c("GSED-BGD", "GSED-BRA",
-#   "GSED-CHN", "GSED-CIV", "GSED-NLD", "GSED-PAK", "GSED-TZA"))
-# - instruments: vector of instruments to include (default: c("sf", "lf"))
-# - remove_visits: vector of visits to remove (default: NULL)
-# - remove_items: vector of items to remove (default: "")
-#
-# The script will create a new model in the GSED_PHASE2 directory with the
-# name "202507/xxx_yy_<cohort>/<phase1+phase2>". The model will contain
-# the D-score and logit values for the items in the specified cohorts and
-# phases. It will also create a plotly widget with the D-score and logit
-# values for the items in the specified cohorts and phases.
 #
 # TODO
 # - Data CHN not yet cleaned (wait for Gareth's OK)
@@ -28,13 +13,13 @@
 # - Repair/remove rogue points in D-score against age scatter plot
 #
 # Created   20250708 SvB
-# Modified  20250721 SvB
+# Modified  20250713 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE1")) == 0L) {
-  stop("Environmental variable MODELS_PHASE1 not set.", call. = FALSE)
+  stop("Environmental variable GSED_PHASE1 not set.", call. = FALSE)
 }
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
-  stop("Environmental variable MODELS_PHASE2 not set.", call. = FALSE)
+  stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
 }
 
 # --- GLOBAL SCRIPT VARIABLES
@@ -56,13 +41,6 @@ if (!exists("remove_visits")) {
 if (!exists("remove_items")) {
   remove_items <- ""
 }
-
-if (!exists("remove_item_country")) {
-  remove_item_country <- data.frame(item = NULL, country = NULL,
-                                    stringsAsFactors = FALSE)
-}
-
-
 # --- END GLOBAL SCRIPT VARIABLES
 
 # Load GitHub packages
@@ -72,7 +50,7 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
   if (answer) remotes::install_github("d-score/dfine")
 }
 require("dfine", quietly = TRUE, warn.conflicts = FALSE)
-if (packageVersion("dfine") < "0.11.0") stop("Needs dfine 0.11.0")
+if (packageVersion("dfine") < "0.9.0") stop("Needs dfine 0.9.0")
 
 # Load CRAN packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
@@ -143,7 +121,7 @@ responses <- responses |>
 # NOTE: END TEMPORARY FIXES
 
 visits <- visits |>
-  select(cohort, subjid, agedays, ins, vist_type) |>
+  select(subjid, agedays, ins, vist_type) |>
   arrange(subjid, agedays, ins, vist_type) |>
   group_by(subjid) |>
   mutate(sf_order = if_else(ins == "sf", row_number(), NA_integer_)) |>
@@ -168,8 +146,8 @@ pairs <- sf_rows |>
   mutate(pair = ifelse(diff > 4L | is.na(diff), -sf_order, sf_order))
 
 # Merge pair number with with response
-items_sf <- get_itemnames(ins = "sf_", order = "indm")
-items_lf <- get_itemnames(ins = c("lfa", "lfb", "lfc"))
+items_sf <- get_itemnames(ins = "gpa", order = "indm")
+items_lf <- get_itemnames(ins = "gto")
 responses <- responses |>
   filter(item %in% c(items_sf, items_lf))
 responses_sf <- responses |>
@@ -212,8 +190,8 @@ responses <- responses |>
 #
 
 min_n <- 10
-items <- c(get_itemnames(ins = "sf_", order = "indm"),
-           get_itemnames(ins = c("lfa", "lfb", "lfc")))
+items <- c(get_itemnames(ins = "gpa", order = "indm"),
+           get_itemnames(ins = "gto"))
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
@@ -232,21 +210,12 @@ responses <- responses |>
   filter(item %in% items)
 
 ### --- REMOVE VISITS (uses remove_visits)
-if (sum(remove_visits) > 0L) {
-  responses_before <- nrow(responses)
-  paired_visits <- dplyr::distinct(responses, subjid, pair) |>
-    arrange(subjid, pair)
-  to_remove <- paired_visits[remove_visits, ]
-  responses <- dplyr::anti_join(responses, to_remove, by = c("subjid", "pair"))
-  responses_after <- nrow(responses)
-  cat("Removed", sum(remove_visits), "visits and",
-      responses_before - responses_after, "responses.\n")
-}
 
-### --- APPLY EDITS
-
-# responses <- dplyr::anti_join(responses, remove_item_country,
-#                               by = c("item", "country"))
+# visits <- visits[remove_visits, ]
+# visits_to_drop <- visits |>
+#   select(subjid, pair, vist_type)
+# responses2 <- responses %>%
+#   anti_join(visits_to_drop, by = c("subjid", "pair", "vist_type"))
 
 #
 #  F. Estimate tau of SF and LF items by a single group design
@@ -281,10 +250,13 @@ if (length(cohorts) == 1) {
 model <- calculate_dmodel(data = responses,
                           fit = fit,
                           name = model_name_add,
+                          population = "preliminary_standards",
                           # anchors = c(gtogmd001 = 20, gtogmd026 = 40))
                           # anchors = c(gtogmd001 = 17.94, gtogmd026 = 41.08))
                           # transform = c(55.86, 4.1))
                           transform = "auto")
+
+item_fit <- model$item_fit
 
 # Store and (re)load models
 path_old <- file.path(Sys.getenv("GSED_PHASE1"), "202408/293_0")
@@ -333,68 +305,27 @@ table(model$item_fit$outfit < 1.4, model$item_fit$infit < 1.4)
 table(model$person_fit$outfit < 3, model$person_fit$infit < 3)
 table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
 
-#
-# Classify DIF phase 1 vs phase 2 using Jodoin/Gierl criteria
-# Classify DIF country using Jodoin/Gierl criteria
-#
-
-DIF <- gsedscripts::calculate_DIF_classification(responses, model)
+# TODO
+# Create DIF plots for phase 1 vs phase 2
+# Create DIF plots by cohort
 
 
-# Diagnostic plots not yet working with dmetric/dfine
+# TODO: Diagnostic plots not yet working with dmetric/dfine
 #
 #  H. create diagnostic plots
 #
-
-library(ggplot2)
-ggplot2::theme_set(theme_light())
-col_manual <- dfine::get_palette("cohort")
-plotdata <- model$dscore |>
-  mutate(cohort = dfine::calculate_cohort(subjid))
-cohortplot_y <- dfine::plot_d_a_cohort(data = plotdata,
-                                       show_smooth = FALSE,
-                                     model_name = model$name,
-                                     file = NULL,
-                                     ref_name = "preliminary_standards",
-                                     xlim = c(0, 42),
-                                     ylim = c(0, 90),
-                                     col_manual = col_manual,
-                                     size = 1, shape = 19)
-cohortplot_z <- dfine::plot_d_a_cohort(data = plotdata,
-                                       daz = TRUE,
-                                       show_smooth = TRUE,
-                                       model_name = model$name,
-                                       file = NULL,
-                                       ref_name = "preliminary_standards",
-                                       xlim = c(0, 42),
-                                       ylim = c(-3, 3),
-                                       ybreaks = c(-3, -2, -1, 0, 1, 2, 3),
-                                       col_manual = col_manual,
-                                       size = 1, shape = 19,
-                                       smooth_line_color = "grey35")
-
-# Calculate means per cohort
-dscore <- model$dscore |>
-  mutate(cohort = dfine::calculate_cohort(subjid)) |>
-  summarize(
-    d = mean(d, na.rm = TRUE),
-    daz = mean(daz, na.rm = TRUE),
-    sem = mean(sem, na.rm = TRUE),
-    n = n(),
-    .by = c("cohort")
-  )
-
-
-
+#
 # if (plot_pdf) {
-# r <- dmetric::plot_dmodel(data = responses,
-#                           model = model,
-#                           path = path,
-#                           col.manual = col.manual,
-#                           ref_name = "preliminary_standards",
-#                           maxy = 100,
-#                           xlim = c(0, 100),
-#                           xbreaks = seq(0, 100, 10))
+#   theme_set(theme_light())
+#   col.manual <- col_manual <- dfine::get_palette("cohort")
+#   r <- dmetric::plot_dmodel(data = data,
+#                             model = model,
+#                             path = path,
+#                             col.manual = col.manual,
+#                             ref_name = "preliminary_standards",
+#                             maxy = 100,
+#                             xlim = c(0, 100),
+#                             xbreaks = seq(0, 100, 10))
 # }
 
 

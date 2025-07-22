@@ -102,7 +102,7 @@ MH <- genDichoDif(Data = as.matrix(data[, -(1:7)]),
 # LR-test: FAILS:  number of items to replace is not a multiple of replacement length
 LR <- genDichoDif(Data = as.matrix(data[, -(1:7)]),
                   group = gp,
-                  focal.names = focal.names,
+                  focal.names = focal.names[1],
                   p.adjust.method = "holm",
                   method = c("genLogistic"))
 

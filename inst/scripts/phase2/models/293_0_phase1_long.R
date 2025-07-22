@@ -8,15 +8,19 @@
 # + Fitting the D-score model to the long matrix (one response per row)
 #
 # Dependencies:
-# + Environmental variable "DUCKPATH_GSED" must be set to the directory
-#   containing database "phase1.duckdb" containing fixed administration
-#   phase1 data
+# + Environmental variable "GSED_PHASE1" must be set to the local directory
+#   containing the models for phase 1 (will be used only for reading)
+# + Environmental variable "GSED_PHASE2" must be set to the local directory
+#   containing the models for phase 2 (will be used for writing)
 #
 # Created   20250618 SvB
-# Modified  20250625 SvB
+# Modified  20250713 SvB
 
-if (nchar(Sys.getenv("LOCAL_DUCKDB")) == 0L) {
-  stop("Environmental variable LOCAL_DUCKDB not set.", call. = FALSE)
+if (nchar(Sys.getenv("GSED_PHASE1")) == 0L) {
+  stop("Environmental variable GSED_PHASE1 not set.", call. = FALSE)
+}
+if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
+  stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
 }
 
 # Load required packages
@@ -32,7 +36,7 @@ if (packageVersion("gsedread") < "0.13.0") stop("Needs gsedread 0.13.0")
 #
 #  A.  Read fixed form Phase 1 data responses and visits
 #
-dbfile <- file.path(Sys.getenv("LOCAL_DUCKDB"), "fixed.duckdb")
+dbfile <- file.path(Sys.getenv("GSED_PHASE2"), "data/fixed.duckdb")
 con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
 dbListTables(con)
 visits <- dbReadTable(con, "visits")
@@ -155,14 +159,14 @@ model <- calculate_dmodel(data = responses,
                          anchors = c(gtogmd001 = 20, gtogmd026 = 40))
 
 
-# Store and reload model
-path <- path.expand(file.path("~/project/gsed/phase2/models", model$name))
-path_old <- "/Users/buurensv/Dropbox/Project/gsed/phase1/202408/293_0"
-if (!dir.exists(path)) dir.create(path)
-saveRDS(model, file = file.path(path, "model.Rds"), compress = "xz")
-saveRDS(data, file = file.path(path, "data.Rds"), compress = "xz")
+# Store and (re)load models
+path_old <- file.path(Sys.getenv("GSED_PHASE1"), "202408/293_0")
 model_old <- readRDS(file.path(path_old, "model.Rds"))
 data_old <- readRDS(file.path(path_old, "data.Rds"))
+
+path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model$name)
+if (!dir.exists(path_new)) dir.create(path_new)
+saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
 
 #
 #  G. Test for proper D-score vs logit alignment

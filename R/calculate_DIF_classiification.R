@@ -7,23 +7,28 @@
 #'   - each country vs others
 #'
 #' @param responses A data frame containing the responses to the items.
+#' @param model Optional. A `dmodel` object used to calculate the `dscore`.
+#' If not specified, the function will calculate the D-score using the
+#' default key.
 #' @return A data frame with items and their classification for DIF.
 #' @export
-calculate_DIF_classification <- function(responses){
+calculate_DIF_classification <- function(responses, model = NULL) {
 
-  items_sf <- c(get_itemnames(instrument = "gpa", order = "indm"))
-  items_lf <- c(get_itemnames(instrument = "gto"))
-  items <- c(items_sf, items_lf)
 
   id_cols <- c("cohort", "country", "subjid", "pair")
   item_var <- "item"
   response_var <- "response"
+
+  items <- unique(responses[[item_var]])
+
   wide <- responses |>
     select(all_of(c(id_cols, "agedays", "ins", item_var, response_var))) |>
-    pivot_wider(names_from = all_of(item_var),
-                values_from = all_of(response_var),
-                id_cols = all_of(id_cols)) |>
-    arrange(!!!syms(all_of(id_cols)))
+    pivot_wider(
+      names_from = !!item_var,
+      values_from = !!response_var,
+      id_cols = all_of(id_cols)
+    ) |>
+    arrange(!!!syms(id_cols))
   agedays_info <- responses |>
     distinct(!!!syms(c("subjid", "pair", "ins", "agedays"))) |>
     pivot_wider(names_from = "ins",
@@ -34,14 +39,25 @@ calculate_DIF_classification <- function(responses){
     left_join(agedays_info, by = c("subjid", "pair")) |>
     mutate(phase = if_else(.data$country %in% c("BGD", "PAK", "TZA"), 1L, 2L)) |>
     select(all_of(id_cols), starts_with("agedays"),
-           "phase", any_of(items_sf), any_of(items_lf))
+           "phase", any_of(items))
 
   # DIF analysis: phase (1 vs 2)
   itemdata <- wide |>
     select(any_of(items)) |>
     as.matrix()
   phase <- wide$phase
-  d <- dscore(wide, xname = "agedays", xunit = "days")$d
+
+  # Calculate D-score, using model itembank when provided
+  itembank <- NULL
+  key <- NULL
+  if (!is.null(model)) {
+    itembank <- model$itembank
+    key <- model$name
+  }
+  d <- dscore(wide, xname = "agedays", xunit = "days",
+              itembank = itembank, key = key)$d
+
+  # DIF analysis: phase
   LR <- genDichoDif(Data = itemdata,
                     group = phase,
                     focal.names = 1,

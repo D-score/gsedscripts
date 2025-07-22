@@ -7,7 +7,7 @@
 #   containing database "data/fixed.duckdb" containing fixed administration data
 #
 # Created   20250630 SvB
-# Modified  20250714 SvB
+# Modified  20250721 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
   stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
@@ -28,7 +28,7 @@ library("dfine")
 library("dscore")
 
 if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
-if (packageVersion("dscore") < "1.10.0") stop("Needs dscore 1.10.0")
+if (packageVersion("dscore") < "1.10.4") stop("Needs dscore 1.10.4")
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
@@ -58,8 +58,8 @@ responses <- responses |>
 #
 
 min_n <- 10
-items_sf <-get_itemnames(ins = "gpa", order = "indm")
-items_lf <- get_itemnames(ins = "gto")
+items_sf <-get_itemnames(ins = "sf_", order = "indm")
+items_lf <- get_itemnames(instrument = c("lfa", "lfb", "lfc"))
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
@@ -185,7 +185,7 @@ device <- "pdf"
 
 # SF
 if (!is.null(file) & device == "pdf") {
-  file <- file.path(path, "gpa_items_by_age.pdf")
+  file <- file.path(path, "sf_items_by_age.pdf")
   pdf(file, onefile = TRUE, width = 10, height = 5)
   lapply(plots_sf, print)
   message("Saved to: ", file)
@@ -194,7 +194,7 @@ if (!is.null(file) & device == "pdf") {
 
 # LF
 if (!is.null(file) & device == "pdf") {
-  file <- file.path(path, "gto_items_by_age.pdf")
+  file <- file.path(path, "lf_items_by_age.pdf")
   pdf(file, onefile = TRUE, width = 10, height = 5)
   lapply(plots_lf, print)
   message("Saved to: ", file)

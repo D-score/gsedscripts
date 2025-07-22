@@ -1,3 +1,13 @@
+- Removes `DUCKDB_LOCAL` system variable from all scripts
+- All scripts depends now only on system variables `GSED_PHASE1` and `GSED_PHASE2`
+- Adds `calculate_DIF_classification()` to test for DIF by phase and country
+- Extend scripts `plot_pass_age.R` and `plot_pass_dscore.R` with BSID and apply system variables `GSED_PHASE1` and `GSED_PHASE2`
+- Adds generic script `phase2/fit_core_model.R` which replaces `293_phase1_long.R`, `293_phase2_wide.R`
+- Updates the following phase2 scripts:
+
+  - descriptives/plot_pass_age
+  - models/293_0_ph
+
 # gsedscripts 0.23.0
 
 - Adds starting phase2 scripts:
