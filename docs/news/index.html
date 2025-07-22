@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gsedscripts</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.23.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.25.0</span>
       </span>
     </div>
 
@@ -41,6 +41,21 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.25.0" id="gsedscripts-0250">gsedscripts 0.25.0<a class="anchor" aria-label="anchor" href="#gsedscripts-0250"></a></h2>
+<ul><li><p>Adds reporting outline <code>Rmd/coremodel_aug25.Rmd</code> to document the reporting process for the GSED key</p></li>
+<li><p>Adds many scripts to <code>inst/scripts/phase2</code> directory to help fitting the new phase_1+2 models</p></li>
+<li><p>Removes <code>DUCKDB_LOCAL</code> system variable from all scripts</p></li>
+<li><p>All scripts depends now only on system variables <code>GSED_PHASE1</code> and <code>GSED_PHASE2</code></p></li>
+<li><p>Adds <code><a href="../reference/calculate_DIF_classification.html">calculate_DIF_classification()</a></code> to test for DIF by phase and country</p></li>
+<li><p>Extend scripts <code>plot_pass_age.R</code> and <code>plot_pass_dscore.R</code> with BSID and apply system variables <code>GSED_PHASE1</code> and <code>GSED_PHASE2</code></p></li>
+<li><p>Adds generic script <code>phase2/fit_core_model.R</code> which replaces <code>293_phase1_long.R</code>, <code>293_phase2_wide.R</code></p></li>
+<li>
+<p>Updates the following phase2 scripts:</p>
+<ul><li>descriptives/plot_pass_age</li>
+<li>models/293_0_ph</li>
+</ul></li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.23.0" id="gsedscripts-0230">gsedscripts 0.23.0<a class="anchor" aria-label="anchor" href="#gsedscripts-0230"></a></h2>
 <ul><li>
