@@ -1,3 +1,6 @@
+# gsedscripts 0.25.0
+
+- Adds many scripts to `inst/scripts/phase2` directory to help fitting the new phase_1+2 models
 - Removes `DUCKDB_LOCAL` system variable from all scripts
 - All scripts depends now only on system variables `GSED_PHASE1` and `GSED_PHASE2`
 - Adds `calculate_DIF_classification()` to test for DIF by phase and country
