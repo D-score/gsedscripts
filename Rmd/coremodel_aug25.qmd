@@ -1,0 +1,81 @@
+---
+title: "GSED Core model analyses"
+format: revealjs
+---
+
+## Objectives
+
+- Goal: To create the GSED core model
+- Brief outline previous work
+- Desirable characteristics of the final core model
+  + SF and LF item only
+  + unidimensional Rasch model for ages 0-42 months
+  + set scale anchors to maximize simility with previous models
+  + cross-culturally valid ("explainable DIF")
+- Use the core model to:
+  + propose new instrument codes
+  + to found other analyses 
+  + fix scale for longer period of time
+
+## Methods
+
+### Data collection
+
+- Instruments: SF, LF
+- Data from the GSED Phase 1 and Phase 2 validation studies
+
+### Data cleaning steps
+
+- Item naming conventions
+- Hard data edits for some items
+- List the actions taken to clean the data
+  + Remove extreme DAZ cases (repair would be better)
+
+### Model
+
+- Create paired observations
+- Fit the Rasch model
+- Estimate ability (D-score)
+
+### Model purification
+
+- Remove misfitting items (which criterion? 1.0 and 1.2)
+  + remove items infit > 2.0 or outfit > 2.0
+- Remove misfitting persons/visits
+- DIF analysis (phase, country) --> split or remove
+- Define scale anchors item
+
+### Evaluation of final model
+
+- Comparison with gsed2406 key
+- Transform parameter alpha, beta
+- Quality of the model
+  + Item fit statistics distribution
+  + Person fit statistics distribution
+- DIF table
+
+## Results
+
+### Descriptives
+
+- Number of observations
+- ? 
+
+### DIF
+
+Proposals
+
+- Accept DIF for toilet training
+- Accept DIF for colour matching
+
+## Questions
+
+- Will the LF and SF remain be fixed?
+- How to construct item names for the core model?
+
+- Central role of the core model in child development measurement
+
+## Reproducibility
+
+- Analysis scripts
+- R packages

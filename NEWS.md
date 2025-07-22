@@ -1,5 +1,6 @@
 # gsedscripts 0.25.0
 
+- Adds reporting outline `Rmd/coremodel_aug25.Rmd` to document the reporting process for the GSED key
 - Adds many scripts to `inst/scripts/phase2` directory to help fitting the new phase_1+2 models
 - Removes `DUCKDB_LOCAL` system variable from all scripts
 - All scripts depends now only on system variables `GSED_PHASE1` and `GSED_PHASE2`
