@@ -9,7 +9,7 @@
 # Uses gsed2 lexicon
 #
 # Created   20250722 SvB
-# Modified  20250722 SvB
+# Modified  20250724 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
   stop("Environmental variable MODELS_PHASE2 not set.", call. = FALSE)
@@ -44,6 +44,7 @@ if (!exists("remove_item_country")) {
 
 # Set the itembank
 model_name <- "281_0_phase_1+2"
+# model_name <- "412_0_phase_1+2"
 path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model_name)
 model <- readRDS(file = file.path(path_new, "model.Rds"))
 
@@ -145,7 +146,7 @@ pairs <- sf_rows |>
   mutate(pair = ifelse(diff > 4L | is.na(diff), -sf_order, sf_order))
 
 # Merge pair number with with response
-items_sf <- get_itemnames(ins = "sf_", order = "indm")
+items_sf <- get_itemnames(ins = "sf_", order = "imnd")
 items_lf <- get_itemnames(ins = c("lfa", "lfb", "lfc"))
 items_bsid <- get_itemnames(ins = "by3")
 
@@ -273,13 +274,13 @@ cor(joined$daz_sf, joined$daz_lf, use = "pair")
 
 d_sf <- dscore(data = data, items = items_sf,
                itembank = itembank,
-               key = "281_0_phase_1+2",
+               key = key,
                xname = "agedays", xunit = "days",
                population = "preliminary_standards",
                metric = "dscore")
 d_lf <- dscore(data = data, items = items_lf,
                itembank = itembank,
-               key = "281_0_phase_1+2",
+               key = key,
                xname = "agedays", xunit = "days",
                population = "preliminary_standards",
                metric = "dscore")
@@ -315,7 +316,7 @@ summary_281_0 <- joined |>
 summary_gsed2406
 summary_281_0
 
-plot(joined$d_sf, joined$d_lf, cex = 0.5, main = "281_0_phase_1+2", xlim = c(0, 90), ylim = c(0, 90))
+plot(joined$d_sf, joined$d_lf, cex = 0.5, main = key, xlim = c(0, 90), ylim = c(0, 90))
 abline(0, 1, col = "red", lwd = 2)
 cor(joined$d_sf, joined$d_lf, use = "pair")
 cor(joined$daz_sf, joined$daz_lf, use = "pair")
@@ -363,6 +364,7 @@ plot3 <- ggplot(joined, aes(x = a, y = daz_lf, group = cohort, colour = cohort))
   scale_x_continuous("Age (years)", limits = c(0, 3.5)) +
   scale_y_continuous("LF (DAZ preliminary_standards)", limits = c(-5, 5)) +
   geom_hline(yintercept = c(-2, 0, 2), colour = "grey", linewidth = 1.5) +
+  geom_smooth(se = TRUE, linewidth = 1) +
   geom_point(
     size = 0.7,
     shape = 19
@@ -376,6 +378,7 @@ plot4 <- ggplot(joined, aes(x = a, y = daz_sf, group = cohort, colour = cohort))
   scale_x_continuous("Age (years)", limits = c(0, 3.5)) +
   scale_y_continuous("SF (DAZ preliminary_standards)", limits = c(-5, 5)) +
   geom_hline(yintercept = c(-2, 0, 2), colour = "grey", linewidth = 1.5) +
+  geom_smooth(se = TRUE, linewidth = 1) +
   geom_point(
     size = 0.7,
     shape = 19
@@ -442,6 +445,19 @@ if (!is.null(file) & device == "pdf") {
   lapply(plots, print)
   message("Saved to: ", file)
   dev.off()
+}
+
+# save diagnostic plots as separate png files
+device <- "png"
+if (!is.null(file) & device == "png") {
+  dir.create(path_new, showWarnings = FALSE, recursive = TRUE)
+  for (i in seq_along(plots)) {
+    file <- file.path(path_new, paste0("diagnostics_", i, ".png"))
+    png(file, width = 5000, height = 5000/1.6, res = 300)
+    print(plots[[i]])
+    dev.off()
+    message("Saved to: ", file)
+  }
 }
 
 # compare difficulty estimates with key gsed2206
