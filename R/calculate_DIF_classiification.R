@@ -19,7 +19,10 @@ calculate_DIF_classification <- function(responses, model = NULL) {
   item_var <- "item"
   response_var <- "response"
 
-  items <- unique(responses[[item_var]])
+  items_sf <- get_itemnames(instrument = "sf_", order = "imnd")
+  items_lf <- get_itemnames(instrument = c("lfa", "lfb", "lfc"))
+  items <- c(items_sf, items_lf)
+  items <- intersect(items, unique(responses[[item_var]]))
 
   wide <- responses |>
     select(all_of(c(id_cols, "agedays", "ins", item_var, response_var))) |>
@@ -57,6 +60,10 @@ calculate_DIF_classification <- function(responses, model = NULL) {
   d <- dscore(wide, xname = "agedays", xunit = "days",
               itembank = itembank, key = key)$d
 
+  # remove mode s SF items from itemdata, since these are only measured in one cohort
+  # items_to_remove <- get_itemnames(ins = "sf_", mode = "s")
+  # itemdata <- itemdata[, !colnames(itemdata) %in% items_to_remove]
+
   # DIF analysis: phase
   LR <- genDichoDif(Data = itemdata,
                     group = phase,
@@ -66,9 +73,12 @@ calculate_DIF_classification <- function(responses, model = NULL) {
 
   # DIF analysis: each country vs others
   country <- wide$country
-  LR_list <- vector("list", length(unique(country)))
-  names(LR_list) <- unique(country)
-  for (ct in unique(country)) {
+  # countries <- setdiff(unique(country), "NLD")
+  countries <- unique(country)
+  LR_list <- vector("list", length(countries))
+  names(LR_list) <- countries
+  for (ct in countries) {
+    cat("ct: ", ct, "\n")
     LR_list[[ct]] <- genDichoDif(Data = itemdata,
                                  group = country,
                                  focal.names = ct,
