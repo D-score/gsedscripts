@@ -1,5 +1,7 @@
 # Purify
 # Creates model 202507/281_0_phase_1+2
+#
+# Modified: 20250726 SvB
 
 path_start <- file.path(Sys.getenv("GSED_PHASE2"), "202507", "293_0_phase_1+2")
 model_start <- readRDS(file.path(path_start, "model.Rds"))
@@ -10,14 +12,6 @@ model_start <- readRDS(file.path(path_start, "model.Rds"))
 # remove_items <- itemfit$item
 
 # Remove selected items with infit > 1.2 after review
-# remove_for_infit <- c("gtofmd005",
-#                       "gtolgd009",
-#                       "gtogmd035",
-#                       "gtofmd031",
-#                       "gtofmd016",
-#                       "gpasec082",
-#                       "gtofmd041",
-#                       "gtofmd029")
 remove_for_infit <- c("sf_sec063",
                       "lfagmd047",
                       "lfblgd008",
@@ -26,16 +20,13 @@ remove_for_infit <- c("sf_sec063",
                       "lfcfmd024",
                       "lfcfmd039",
                       "lfcfmd035")
-# remove_for_dif <- c("gtofmd009",
-#                     "gtolgd011",
-#                     "gtolgd003",
-#                     "gtolgd004")
-remove_for_dif <- c("lfblgd001",
-                    "lfblgd005",
-                    "lfblgd014",
-                    "lfcfmd010")
+remove_for_dif <- ""
+# remove_for_dif <- c("lfblgd001",
+#                     "lfblgd005",
+#                     "lfblgd014",
+#                     "lfcfmd010")
 remove_items <- unique(c(remove_for_infit, remove_for_dif))
-dscore::get_labels(remove_items)
+# dscore::get_labels(remove_items)
 
 # Remove visits with persons infit/outout value > 2.0
 pfit <- model_start$person_fit |>
