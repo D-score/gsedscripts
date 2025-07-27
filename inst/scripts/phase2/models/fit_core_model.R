@@ -311,16 +311,16 @@ htmlwidgets::saveWidget(dif_tau,
 # Person (=visit) fit histograms
 
 oldpar <- par(mfrow = c(2, 2))
-hist(model$person_fit$outfit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
+hist(model$person_fit$outfit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
      main = "Person outfit", xlab = "", ylim = c(0, 2.6))
-hist(model$person_fit$infit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
+hist(model$person_fit$infit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
      main = "Person infit", xlab = "", ylim = c(0, 2.6))
 
 # Item fit histograms
 
-hist(model$item_fit$outfit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
+hist(model$item_fit$outfit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
      main = "Item outfit", xlab = "", ylim = c(0, 2.6))
-hist(model$item_fit$infit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
+hist(model$item_fit$infit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
      main = "Item infit", xlab = "", ylim = c(0, 2.6))
 par(oldpar)
 
