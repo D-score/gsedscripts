@@ -246,7 +246,7 @@ if (sum(remove_visits) > 0L) {
 ### --- APPLY EDITS
 
 # responses <- dplyr::anti_join(responses, remove_item_country,
-#                               by = c("item", "country"))
+#                             by = c("item", "country"))
 
 #
 #  F. Estimate tau of SF and LF items by a single group design
@@ -339,7 +339,8 @@ table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
 #
 
 DIF <- gsedscripts::calculate_DIF_classification(responses, model)
-
+write.table(DIF, file = file.path(path_new, "DIF.csv"),
+            quote = FALSE, row.names = FALSE, sep = "\t", dec = ".")
 
 # Diagnostic plots not yet working with dmetric/dfine
 #

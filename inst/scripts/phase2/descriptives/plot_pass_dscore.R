@@ -35,8 +35,8 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
-if (packageVersion("dscore") < "1.10.4") stop("Needs dscore 1.10.4")
+if (packageVersion("dfine") < "0.12.0") stop("Needs dfine 0.12.0")
+if (packageVersion("dscore") < "1.10.7") stop("Needs dscore 1.10.7")
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits

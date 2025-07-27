@@ -21,17 +21,18 @@ remove_for_infit <- c("sf_sec063",
                       "lfcfmd039",
                       "lfcfmd035")
 remove_for_dif <- ""
-# remove_for_dif <- c("lfblgd001",
-#                     "lfblgd005",
-#                     "lfblgd014",
-#                     "lfcfmd010")
+remove_for_dif <- c("sf_lgc004",
+                    "lfblgd001",
+                    "lfblgd005",
+                    "lfblgd014")
 remove_items <- unique(c(remove_for_infit, remove_for_dif))
-# dscore::get_labels(remove_items)
+dscore::get_labels(remove_items)
 
 # Remove visits with persons infit/outout value > 2.0
 pfit <- model_start$person_fit |>
   dplyr::arrange(subjid, pair)
 remove_visits <- pfit$infit > 2.0 | pfit$outfit > 2.0
+# remove_visits <- NULL
 
 # Edits
 # remove_item_country <- data.frame(

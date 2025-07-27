@@ -1,3 +1,6 @@
+
+- Add some improvements to scripts
+
 # gsedscripts 0.25.0
 
 - Adds reporting outline `Rmd/coremodel_aug25.Rmd` to document the reporting process for the GSED key

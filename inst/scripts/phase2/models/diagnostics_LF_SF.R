@@ -44,6 +44,7 @@ if (!exists("remove_item_country")) {
 
 # Set the itembank
 model_name <- "281_0_phase_1+2"
+model_name <- "285_0_phase_1+2"  # includes item (8) and person removal (2.0)
 # model_name <- "412_0_phase_1+2"
 path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model_name)
 model <- readRDS(file = file.path(path_new, "model.Rds"))
@@ -300,7 +301,7 @@ joined <- bind_cols(
   )
 
 # summary over subjid-pair units
-summary_281_0 <- joined |>
+summary_new_0 <- joined |>
   group_by(cohort) |>
   summarise(
     n = n(),
@@ -314,7 +315,7 @@ summary_281_0 <- joined |>
   ungroup()
 
 summary_gsed2406
-summary_281_0
+summary_new_0
 
 plot(joined$d_sf, joined$d_lf, cex = 0.5, main = key, xlim = c(0, 90), ylim = c(0, 90))
 abline(0, 1, col = "red", lwd = 2)
@@ -459,29 +460,3 @@ if (!is.null(file) & device == "png") {
     message("Saved to: ", file)
   }
 }
-
-# compare difficulty estimates with key gsed2206
-tau_gsed2406 <- get_tau(items = c(items_lf, items_sf), key = "gsed2406")
-tau_281_0 <- get_tau(items = c(items_lf, items_sf), key = "281_0",
-                     itembank = cbind(key = "281_0", itembank))
-df <- data.frame(item = c(items_lf, items_sf),
-                 instrument = c(rep("LF", length(items_lf)), rep("SF", length(items_sf))),
-                 tau_gsed2406 = tau_gsed2406,
-                 tau_281_0 = tau_281_0)
-df$item <- dscore::rename_vector(df$item, lexin = "gsed3", lexout = "gsed4")
-
-# plotting with basic ggparcoord from GGally
-library(GGally)
-g1 <- ggparcoord(df, columns = c(3, 4), groupColumn = 2, scale = 'globalminmax',?
-                   showPoints = TRUE, alphaLines = 0.7) +
-  xlab("Key") +
-  ylab("Item difficulty")
-
-g <- g1 +
-  geom_text(aes(y = tau_gsed2406, x = 1, label = item), data = df[df$instrument == "LF", ],
-            nudge_x = -0.2, inherit.aes = FALSE, cex = 3, check_overlap = TRUE,
-            family = "Courier") +
-  geom_text(aes(y = tau_281_0, x = 2, label = item), data = df[df$instrument == "SF", ],
-            nudge_x = 0.2, inherit.aes = FALSE, cex = 3, check_overlap = TRUE,
-            family = "Courier")
-g

@@ -78,7 +78,7 @@ calculate_DIF_classification <- function(responses, model = NULL) {
   LR_list <- vector("list", length(countries))
   names(LR_list) <- countries
   for (ct in countries) {
-    cat("ct: ", ct, "\n")
+    # cat("ct: ", ct, "\n")
     LR_list[[ct]] <- genDichoDif(Data = itemdata,
                                  group = country,
                                  focal.names = ct,
