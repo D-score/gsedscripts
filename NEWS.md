@@ -1,5 +1,7 @@
+# gsedscripts 0.26.0
 
 - Add some improvements to scripts
+- Prepare for reproducibility
 
 # gsedscripts 0.25.0
 
