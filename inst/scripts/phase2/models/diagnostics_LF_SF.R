@@ -44,7 +44,7 @@ if (!exists("remove_item_country")) {
 
 # Set the itembank
 model_name <- "281_0_phase_1+2"
-model_name <- "285_0_phase_1+2"  # includes item (8) and person removal (2.0)
+# model_name <- "285_0_phase_1+2"  # includes item (8) and person removal (2.0)
 # model_name <- "412_0_phase_1+2"
 path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model_name)
 model <- readRDS(file = file.path(path_new, "model.Rds"))
@@ -439,7 +439,7 @@ plot8
 plots <- list(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8)
 
 # save as one pdf with all variations
-device <- "pdf"
+device <- ""
 if (!is.null(file) & device == "pdf") {
   file <- file.path(path_new, paste0("diagnostics.pdf"))
   pdf(file, width = 20, height = 12.5)
@@ -449,7 +449,7 @@ if (!is.null(file) & device == "pdf") {
 }
 
 # save diagnostic plots as separate png files
-device <- "png"
+device <- ""
 if (!is.null(file) & device == "png") {
   dir.create(path_new, showWarnings = FALSE, recursive = TRUE)
   for (i in seq_along(plots)) {
