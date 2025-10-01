@@ -27,8 +27,12 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.13.0") stop("Needs dfine 0.13.0")
-if (packageVersion("dscore") < "1.11.1") stop("Needs dscore 1.11.1")
+if (packageVersion("dfine") < "0.13.0") {
+  stop("Needs dfine 0.13.0")
+}
+if (packageVersion("dscore") < "1.11.1") {
+  stop("Needs dscore 1.11.1")
+}
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
@@ -50,7 +54,8 @@ responses <- responses |>
     visits |>
       distinct(cohort, subjid, agedays, vist_type) |>
       mutate(country = substr(cohort, 6, 8)),
-    by = c("subjid", "agedays", "vist_type")) |>
+    by = c("subjid", "agedays", "vist_type")
+  ) |>
   select(cohort, country, subjid, agedays, vist_type, item, response)
 
 #
@@ -58,14 +63,18 @@ responses <- responses |>
 #
 
 min_n <- 10
-items_sf <-get_itemnames(ins = "gs1", order = "indm")
+items_sf <- get_itemnames(ins = "gs1", order = "indm")
 items_lf <- get_itemnames(ins = "gl1")
 items_lf <- items_lf[c(55:155, 1:54)]
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items1 <- intersect(c(items_sf, items_lf), valid_items)
@@ -94,8 +103,12 @@ items_bsid <- get_itemnames(ins = "by3")
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items2 <- intersect(items_bsid, valid_items)
@@ -154,7 +167,8 @@ plots_sf <- plot_pass(
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
   label_trunc = 80,
-  col_manual = col_manual)
+  col_manual = col_manual
+)
 
 # LF
 plots_lf <- plot_pass(
@@ -164,7 +178,8 @@ plots_lf <- plot_pass(
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
   label_trunc = 80,
-  col_manual = col_manual)
+  col_manual = col_manual
+)
 
 # BSID
 plots_bsid <- plot_pass(
@@ -175,7 +190,8 @@ plots_bsid <- plot_pass(
   xbreaks = seq(0, 48, 6),
   label_trunc = 80,
   col_manual = col_manual,
-  min_n = 3)
+  min_n = 3
+)
 
 #
 # F.  Save plots as PDF
@@ -210,4 +226,3 @@ if (!is.null(file) & device == "pdf") {
   message("Saved to: ", file)
   dev.off()
 }
-

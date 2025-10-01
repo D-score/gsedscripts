@@ -43,8 +43,15 @@ if (!exists("phases")) {
   phases <- c(1, 2)
 }
 if (!exists("cohorts")) {
-  cohorts <- c("GSED-BGD", "GSED-BRA", "GSED-CHN",
-               "GSED-CIV", "GSED-NLD", "GSED-PAK", "GSED-TZA")
+  cohorts <- c(
+    "GSED-BGD",
+    "GSED-BRA",
+    "GSED-CHN",
+    "GSED-CIV",
+    "GSED-NLD",
+    "GSED-PAK",
+    "GSED-TZA"
+  )
 }
 if (!exists("instruments")) {
   instruments <- c("sf", "lf")
@@ -57,8 +64,11 @@ if (!exists("remove_items")) {
 }
 
 if (!exists("remove_item_country")) {
-  remove_item_country <- data.frame(item = NULL, country = NULL,
-                                    stringsAsFactors = FALSE)
+  remove_item_country <- data.frame(
+    item = NULL,
+    country = NULL,
+    stringsAsFactors = FALSE
+  )
 }
 
 
@@ -71,7 +81,9 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
   if (answer) remotes::install_github("d-score/dfine")
 }
 require("dfine", quietly = TRUE, warn.conflicts = FALSE)
-if (packageVersion("dfine") < "0.13.0") stop("Needs dfine 0.13.0")
+if (packageVersion("dfine") < "0.13.0") {
+  stop("Needs dfine 0.13.0")
+}
 
 # Load CRAN packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
@@ -99,14 +111,18 @@ dbDisconnect(con)
 #
 
 visits <- visits |>
-  filter(phase %in% phases &
-           cohort %in% cohorts &
-           ins %in% instruments &
-           vist_type != 5L)
+  filter(
+    phase %in%
+      phases &
+      cohort %in% cohorts &
+      ins %in% instruments &
+      vist_type != 5L
+  )
 responses <- semi_join(
   responses,
   visits,
-  by = c("subjid", "agedays", "vist_type"))
+  by = c("subjid", "agedays", "vist_type")
+)
 
 #
 # C. Add country and cohort fields to responses
@@ -117,7 +133,8 @@ responses <- responses |>
     visits |>
       distinct(cohort, subjid, agedays, vist_type) |>
       mutate(country = substr(cohort, 6, 8)),
-    by = c("subjid", "agedays", "vist_type")) |>
+    by = c("subjid", "agedays", "vist_type")
+  ) |>
   select(cohort, country, subjid, agedays, vist_type, item, response)
 
 #
@@ -133,10 +150,18 @@ responses <- responses |>
 # - restore agedays where possible
 
 responses <- responses |>
-  filter(!(subjid %in% c("076-GSED-0528", "076-GSED-0905", "076-GSED-0905",
-                         "076-GSED-1322",
-                         "384-GSED-1160", "384-GSED-1323",
-                         "528-GSED-0581"))) |>
+  filter(
+    !(subjid %in%
+      c(
+        "076-GSED-0528",
+        "076-GSED-0905",
+        "076-GSED-0905",
+        "076-GSED-1322",
+        "384-GSED-1160",
+        "384-GSED-1323",
+        "528-GSED-0581"
+      ))
+  ) |>
   filter(!is.na(agedays))
 
 # NOTE: END TEMPORARY FIXES
@@ -179,10 +204,11 @@ responses_sf <- responses |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 responses_lf <- responses |>
   filter(item %in% items_lf) |>
-  left_join(pairs |> filter(pair > 0),
-            by = join_by(subjid, agedays == lf_agedays)) |>
-  mutate(pair = ifelse(is.na(pair), -agedays, pair),
-         ins = "lf") |>
+  left_join(
+    pairs |> filter(pair > 0),
+    by = join_by(subjid, agedays == lf_agedays)
+  ) |>
+  mutate(pair = ifelse(is.na(pair), -agedays, pair), ins = "lf") |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 
 # Check for zero duplicate matches
@@ -194,8 +220,8 @@ responses <- bind_rows(responses_sf, responses_lf)
 
 # > tail(table(responses$pair, useNA = "al"), 10)
 #
-#   -25    -19    -17     -6     -2     -1      1      2      3   <NA> 
-#    18     17     27     21   2018   7583 691786 163347   8613      0 
+#   -25    -19    -17     -6     -2     -1      1      2      3   <NA>
+#    18     17     27     21   2018   7583 691786 163347   8613      0
 #
 # Explanation of pair numbers:
 #
@@ -216,8 +242,12 @@ items <- c(items_sf, items_lf)
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items <- intersect(items, valid_items)
@@ -238,8 +268,13 @@ if (sum(remove_visits) > 0L) {
   to_remove <- paired_visits[remove_visits, ]
   responses <- dplyr::anti_join(responses, to_remove, by = c("subjid", "pair"))
   responses_after <- nrow(responses)
-  cat("Removed", sum(remove_visits), "visits and",
-      responses_before - responses_after, "responses.\n")
+  cat(
+    "Removed",
+    sum(remove_visits),
+    "visits and",
+    responses_before - responses_after,
+    "responses.\n"
+  )
 }
 
 ### --- APPLY EDITS
@@ -251,9 +286,7 @@ if (sum(remove_visits) > 0L) {
 #  F. Estimate tau of SF and LF items by a single group design
 #
 
-fit <- rasch(data = responses,
-             visit_var = c("subjid", "pair"),
-             items = items)
+fit <- rasch(data = responses, visit_var = c("subjid", "pair"), items = items)
 
 #
 #  G. Calculate the dmodel object
@@ -277,13 +310,15 @@ if (length(cohorts) == 1) {
 #
 # NOTE: transform = "auto"  runs a linear regresion model to find the
 # intercept and slope that predict the gsed2406 tau values
-model <- calculate_dmodel(data = responses,
-                          fit = fit,
-                          name = model_name_add,
-                          # anchors = c(gtogmd001 = 20, gtogmd026 = 40))
-                          # anchors = c(gtogmd001 = 17.94, gtogmd026 = 41.08))
-                          # transform = c(55.86, 4.1))
-                          transform = "auto")
+model <- calculate_dmodel(
+  data = responses,
+  fit = fit,
+  name = model_name_add,
+  # anchors = c(gtogmd001 = 20, gtogmd026 = 40))
+  # anchors = c(gtogmd001 = 17.94, gtogmd026 = 41.08))
+  # transform = c(55.86, 4.1))
+  transform = "auto"
+)
 
 # Store and (re)load models
 path_old <- file.path(Sys.getenv("GSED_PHASE1"), "202408/293_0")
@@ -291,7 +326,9 @@ model_old <- readRDS(file.path(path_old, "model.Rds"))
 data_old <- readRDS(file.path(path_old, "data.Rds"))
 
 path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202510", model$name)
-if (!dir.exists(path_new)) dir.create(path_new)
+if (!dir.exists(path_new)) {
+  dir.create(path_new)
+}
 saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
 
 #
@@ -300,27 +337,55 @@ saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
 
 tau_tau <- dfine::plot_tau_contrast(model, model_old, detrended = FALSE)
 dif_tau <- dfine::plot_tau_contrast(model, model_old)
-htmlwidgets::saveWidget(tau_tau,
-                        file = file.path(path_new, "tau_tau.html"),
-                        selfcontained = TRUE)
-htmlwidgets::saveWidget(dif_tau,
-                        file = file.path(path_new, "dif_tau.html"),
-                        selfcontained = TRUE)
+htmlwidgets::saveWidget(
+  tau_tau,
+  file = file.path(path_new, "tau_tau.html"),
+  selfcontained = TRUE
+)
+htmlwidgets::saveWidget(
+  dif_tau,
+  file = file.path(path_new, "dif_tau.html"),
+  selfcontained = TRUE
+)
 
 # Person (=visit) fit histograms
 
 oldpar <- par(mfrow = c(2, 2))
-hist(model$person_fit$outfit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Person outfit", xlab = "", ylim = c(0, 2.6))
-hist(model$person_fit$infit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Person infit", xlab = "", ylim = c(0, 2.6))
+hist(
+  model$person_fit$outfit,
+  xlim = c(0, 3),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Person outfit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
+hist(
+  model$person_fit$infit,
+  xlim = c(0, 3),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Person infit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
 
 # Item fit histograms
 
-hist(model$item_fit$outfit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Item outfit", xlab = "", ylim = c(0, 2.6))
-hist(model$item_fit$infit, xlim = c(0, 3), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Item infit", xlab = "", ylim = c(0, 2.6))
+hist(
+  model$item_fit$outfit,
+  xlim = c(0, 3),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Item outfit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
+hist(
+  model$item_fit$infit,
+  xlim = c(0, 3),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Item infit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
 par(oldpar)
 
 
@@ -338,8 +403,14 @@ table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
 #
 
 DIF <- dfine::calculate_DIF_classification(responses, model)
-write.table(DIF, file = file.path(path_new, "DIF.csv"),
-            quote = FALSE, row.names = FALSE, sep = "\t", dec = ".")
+write.table(
+  DIF,
+  file = file.path(path_new, "DIF.csv"),
+  quote = FALSE,
+  row.names = FALSE,
+  sep = "\t",
+  dec = "."
+)
 
 # Diagnostic plots not yet working with dmetric/dfine
 #
@@ -351,27 +422,33 @@ ggplot2::theme_set(theme_light())
 col_manual <- dfine::get_palette("cohort")
 plotdata <- model$dscore |>
   mutate(cohort = dfine::calculate_cohort(subjid))
-cohortplot_y <- dfine::plot_d_a_cohort(data = plotdata,
-                                       show_smooth = FALSE,
-                                     model_name = model$name,
-                                     file = NULL,
-                                     ref_name = "preliminary_standards",
-                                     xlim = c(0, 42),
-                                     ylim = c(0, 90),
-                                     col_manual = col_manual,
-                                     size = 1, shape = 19)
-cohortplot_z <- dfine::plot_d_a_cohort(data = plotdata,
-                                       daz = TRUE,
-                                       show_smooth = TRUE,
-                                       model_name = model$name,
-                                       file = NULL,
-                                       ref_name = "preliminary_standards",
-                                       xlim = c(0, 42),
-                                       ylim = c(-3, 3),
-                                       ybreaks = c(-3, -2, -1, 0, 1, 2, 3),
-                                       col_manual = col_manual,
-                                       size = 1, shape = 19,
-                                       smooth_line_color = "grey35")
+cohortplot_y <- dfine::plot_d_a_cohort(
+  data = plotdata,
+  show_smooth = FALSE,
+  model_name = model$name,
+  file = NULL,
+  ref_name = "preliminary_standards",
+  xlim = c(0, 42),
+  ylim = c(0, 90),
+  col_manual = col_manual,
+  size = 1,
+  shape = 19
+)
+cohortplot_z <- dfine::plot_d_a_cohort(
+  data = plotdata,
+  daz = TRUE,
+  show_smooth = TRUE,
+  model_name = model$name,
+  file = NULL,
+  ref_name = "preliminary_standards",
+  xlim = c(0, 42),
+  ylim = c(-3, 3),
+  ybreaks = c(-3, -2, -1, 0, 1, 2, 3),
+  col_manual = col_manual,
+  size = 1,
+  shape = 19,
+  smooth_line_color = "grey35"
+)
 
 # Calculate means per cohort
 dscore <- model$dscore |>
@@ -384,8 +461,6 @@ dscore <- model$dscore |>
     .by = c("cohort")
   )
 
-
-
 # if (plot_pdf) {
 # r <- dmetric::plot_dmodel(data = responses,
 #                           model = model,
@@ -396,7 +471,6 @@ dscore <- model$dscore |>
 #                           xlim = c(0, 100),
 #                           xbreaks = seq(0, 100, 10))
 # }
-
 
 # We do not need to check D-score/logit each time, so outcomment for now
 # #
