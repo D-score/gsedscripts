@@ -3,7 +3,7 @@
 # 2) BSID, phase 1.
 #
 # Dependencies:
-# + Environmental variable "GSED_PHASE2" must be set to the directory
+#   Environmental variable "GSED_PHASE2" must be set to the directory
 #   containing database "data/fixed.duckdb" containing fixed administration data
 #
 # Created   20250630 SvB

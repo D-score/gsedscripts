@@ -1,4 +1,7 @@
+# gsedscripts 0.26.0.9000
 
+- Adapts scripts to gsed3 lexicon
+- Moves `calculate_DIF_classification()` and `calculate_DIF_table()` from gsedscripts (0.27.0) to dfine package (0.13.0)
 - Moves `build_database_fixed.R` from `gsedread` to `gsedscripts` package
 
 # gsedscripts 0.26.0
