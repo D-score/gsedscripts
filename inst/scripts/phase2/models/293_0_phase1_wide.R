@@ -33,7 +33,7 @@ library("testthat", quietly = TRUE, warn.conflicts = FALSE)
 library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 
 if (packageVersion("gsedread") < "0.16.0") stop("Needs gsedread 0.16.0")
-if (packageVersion("dfine") < "0.9.0") stop("Needs gsedread 0.9.0")
+if (packageVersion("dfine") < "0.13.0") stop("Needs gsedread 0.13.0")
 
 #
 #  A.  Read fixed form Phase 1 data responses and visits

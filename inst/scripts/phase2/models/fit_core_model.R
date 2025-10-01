@@ -16,19 +16,18 @@
 # - remove_items: vector of items to remove (default: "")
 #
 # The script will create a new model in the GSED_PHASE2 directory with the
-# name "202507/xxx_yy_<cohort>/<phase1+phase2>". The model will contain
+# name "202510/xxx_yy_<cohort>/<phase1+phase2>". The model will contain
 # the D-score and logit values for the items in the specified cohorts and
 # phases. It will also create a plotly widget with the D-score and logit
 # values for the items in the specified cohorts and phases.
 #
 # TODO
-# - Data CHN not yet cleaned (wait for Gareth's OK)
 # - Step D contains temporary fixes. This needs to be improved.
 # - Step modifies the data to prevent duplicates. This needs a better solution.
 # - Repair/remove rogue points in D-score against age scatter plot
 #
 # Created   20250708 SvB
-# Modified  20250721 SvB
+# Modified  20251001 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE1")) == 0L) {
   stop("Environmental variable MODELS_PHASE1 not set.", call. = FALSE)
@@ -72,7 +71,7 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
   if (answer) remotes::install_github("d-score/dfine")
 }
 require("dfine", quietly = TRUE, warn.conflicts = FALSE)
-if (packageVersion("dfine") < "0.11.0") stop("Needs dfine 0.11.0")
+if (packageVersion("dfine") < "0.13.0") stop("Needs dfine 0.13.0")
 
 # Load CRAN packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
@@ -168,8 +167,9 @@ pairs <- sf_rows |>
   mutate(pair = ifelse(diff > 4L | is.na(diff), -sf_order, sf_order))
 
 # Merge pair number with with response
-items_sf <- get_itemnames(ins = "sf_", order = "indm")
-items_lf <- get_itemnames(ins = c("lfa", "lfb", "lfc"))
+items_sf <- get_itemnames(ins = "gs1", order = "indm")
+items_lf <- get_itemnames(ins = "gl1")
+items_lf <- items_lf[c(55:155, 1:54)]
 responses <- responses |>
   filter(item %in% c(items_sf, items_lf))
 responses_sf <- responses |>
@@ -194,8 +194,8 @@ responses <- bind_rows(responses_sf, responses_lf)
 
 # > tail(table(responses$pair, useNA = "al"), 10)
 #
-#  -25    -19    -17     -6     -2     -1      1      2      3   <NA>
-#   18     17     27     21   2018   7583 689313 162964   8615      0
+#   -25    -19    -17     -6     -2     -1      1      2      3   <NA> 
+#    18     17     27     21   2018   7583 691786 163347   8613      0 
 #
 # Explanation of pair numbers:
 #
@@ -212,8 +212,7 @@ responses <- responses |>
 #
 
 min_n <- 10
-items <- c(get_itemnames(ins = "sf_", order = "indm"),
-           get_itemnames(ins = c("lfa", "lfb", "lfc")))
+items <- c(items_sf, items_lf)
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
@@ -291,7 +290,7 @@ path_old <- file.path(Sys.getenv("GSED_PHASE1"), "202408/293_0")
 model_old <- readRDS(file.path(path_old, "model.Rds"))
 data_old <- readRDS(file.path(path_old, "data.Rds"))
 
-path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model$name)
+path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202510", model$name)
 if (!dir.exists(path_new)) dir.create(path_new)
 saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
 
@@ -338,7 +337,7 @@ table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
 # Classify DIF country using Jodoin/Gierl criteria
 #
 
-DIF <- gsedscripts::calculate_DIF_classification(responses, model)
+DIF <- dfine::calculate_DIF_classification(responses, model)
 write.table(DIF, file = file.path(path_new, "DIF.csv"),
             quote = FALSE, row.names = FALSE, sep = "\t", dec = ".")
 
@@ -458,3 +457,4 @@ dscore <- model$dscore |>
 # #   expect_equal(ib[ib$item == "gtogmd026", "tau"], 40, tolerance = 0.001)
 # # })
 #
+

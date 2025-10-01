@@ -7,7 +7,7 @@
 #   containing database "data/fixed.duckdb" containing fixed administration data
 #
 # Created   20250630 SvB
-# Modified  20250721 SvB
+# Modified  20251001 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
   stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
@@ -27,8 +27,8 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
-if (packageVersion("dscore") < "1.10.4") stop("Needs dscore 1.10.4")
+if (packageVersion("dfine") < "0.13.0") stop("Needs dfine 0.13.0")
+if (packageVersion("dscore") < "1.11.1") stop("Needs dscore 1.11.1")
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
@@ -58,8 +58,9 @@ responses <- responses |>
 #
 
 min_n <- 10
-items_sf <-get_itemnames(ins = "sf_", order = "indm")
-items_lf <- get_itemnames(instrument = c("lfa", "lfb", "lfc"))
+items_sf <-get_itemnames(ins = "gs1", order = "indm")
+items_lf <- get_itemnames(ins = "gl1")
+items_lf <- items_lf[c(55:155, 1:54)]
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
@@ -74,15 +75,15 @@ responses1 <- responses |>
 # For SF & LF Phase 1&2
 # table(responses1$vist_type, responses1$country)
 #
-#       BGD    BRA    CHN    CIV    NLD    PAK    TZA
-# 1   56967 116873  68482  50161  16770  63931  60760
-# 2   47162     83   7452  46277      0  53342  49240
-# 4       0      0      0      0  18600      0      0
-# 5    8407   6147   6331   6961    583   8335   8618
-# 6    4331   4188   3140   3833   4027   5140   4896
-# 7    6915    101   5779   5363   1188  11001   7341
-# 8   43695  19074      0      0   1969  39592  41707
-# 12    101      0      0      0      0   7696    333
+#         BGD    BRA    CHN    CIV    NLD    PAK    TZA
+#  1   56967 117228  68766  50210  16770  63930  60760
+#  2   47568     83   7528  46584      0  53650  49604
+#  4       0      0      0      0  18779      0      0
+#  5    8435   6163   6353   6976    588   8350   8636
+#  6    4346   4200   3150   3843   4049   5150   4904
+#  7    6951    101   5818   5397   1198  11024   7377
+#  8   43821  19105      0      0   1971  39658  41791
+#  12    101      0      0      0      0   7696    333
 
 #
 #  C2. Select BSID items with at least 3 observations in both categories

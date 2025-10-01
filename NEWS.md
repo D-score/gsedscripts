@@ -1,3 +1,6 @@
+
+- Moves `build_database_fixed.R` from `gsedread` to `gsedscripts` package
+
 # gsedscripts 0.26.0
 
 - Add some improvements to scripts

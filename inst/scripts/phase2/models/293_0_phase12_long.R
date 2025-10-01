@@ -50,7 +50,7 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
   if (answer) remotes::install_github("d-score/dfine")
 }
 require("dfine", quietly = TRUE, warn.conflicts = FALSE)
-if (packageVersion("dfine") < "0.9.0") stop("Needs dfine 0.9.0")
+if (packageVersion("dfine") < "0.13.0") stop("Needs dfine 0.13.0")
 
 # Load CRAN packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
