@@ -1,5 +1,7 @@
-# gsedscripts 0.26.0.9000
+# gsedscripts 0.27.0
 
+- Major update to create new key `gsed2510`. 
+- Updates all scripts to use the `gs1` and `gl1` instrument codes for GSED SF and LF, respectively 
 - Adapts scripts to gsed3 lexicon
 - Moves `calculate_DIF_classification()` and `calculate_DIF_table()` from gsedscripts (0.27.0) to dfine package (0.13.0)
 - Moves `build_database_fixed.R` from `gsedread` to `gsedscripts` package

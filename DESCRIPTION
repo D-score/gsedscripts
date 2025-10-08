@@ -1,7 +1,7 @@
 Package: gsedscripts
 Type: Package
 Title: Package with scripts and functions for GSED validation
-Version: 0.26.0
+Version: 0.27.0
 Author: Stef van Buuren
 Maintainer: Stef van Buuren <stef.vanbuuren@tno.nl>
 Description: Holdout for scripts and custom functions needed for the 
@@ -28,4 +28,4 @@ Suggests:
     gseddata (>= 1.9.0),
     gsedread (>= 0.8.0),
     plotly
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
