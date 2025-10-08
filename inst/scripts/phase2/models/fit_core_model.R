@@ -1,9 +1,9 @@
 # This script fits the core model 293_0 for the phase-1 & 2 data
 #
 # Dependencies:
-# + Environmental variable "GSED_PHASE1" must be set to the local directory
+# - Environmental variable "GSED_PHASE1" must be set to the local directory
 #   containing the models for phase 1 (will be used only for reading)
-# + Environmental variable "GSED_PHASE2" must be set to the local directory
+# - Environmental variable "GSED_PHASE2" must be set to the local directory
 #   containing the models for phase 2 (will be used for writing)
 #
 # This script can be called from another script by setting the following
@@ -27,7 +27,7 @@
 # - Repair/remove rogue points in D-score against age scatter plot
 #
 # Created   20250708 SvB
-# Modified  20251001 SvB
+# Modified  20251006 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE1")) == 0L) {
   stop("Environmental variable MODELS_PHASE1 not set.", call. = FALSE)
@@ -70,7 +70,6 @@ if (!exists("remove_item_country")) {
     stringsAsFactors = FALSE
   )
 }
-
 
 # --- END GLOBAL SCRIPT VARIABLES
 
@@ -351,125 +350,357 @@ htmlwidgets::saveWidget(
 # Person (=visit) fit histograms
 
 oldpar <- par(mfrow = c(2, 2))
-hist(
-  model$person_fit$outfit,
-  xlim = c(0, 3),
-  breaks = c(seq(0, 5, 0.1), Inf),
-  main = "Person outfit",
-  xlab = "",
-  ylim = c(0, 2.6)
-)
-hist(
+h1 <- hist(
   model$person_fit$infit,
+  freq = TRUE,
   xlim = c(0, 3),
   breaks = c(seq(0, 5, 0.1), Inf),
   main = "Person infit",
   xlab = "",
-  ylim = c(0, 2.6)
+  ylim = c(0, 2200)
+)
+h2 <- hist(
+  model$person_fit$outfit,
+  freq = TRUE,
+  xlim = c(0, 3),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Person outfit",
+  xlab = "",
+  ylim = c(0, 2200)
 )
 
 # Item fit histograms
-
-hist(
-  model$item_fit$outfit,
-  xlim = c(0, 3),
-  breaks = c(seq(0, 5, 0.1), Inf),
-  main = "Item outfit",
-  xlab = "",
-  ylim = c(0, 2.6)
-)
-hist(
+h3 <- hist(
   model$item_fit$infit,
+  freq = TRUE,
   xlim = c(0, 3),
   breaks = c(seq(0, 5, 0.1), Inf),
   main = "Item infit",
   xlab = "",
-  ylim = c(0, 2.6)
+  ylim = c(0, 80)
+)
+
+h4 <- hist(
+  model$item_fit$outfit,
+  freq = TRUE,
+  xlim = c(0, 3),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Item outfit",
+  xlab = "",
+  ylim = c(0, 80)
 )
 par(oldpar)
 
 
-# Potential cut-offs for removing items and persons
+# Count items and persons under the chosen cut-offs
 
 table(model$item_fit$outfit < 1.2, model$item_fit$infit < 1.2)
-table(model$item_fit$outfit < 1.4, model$item_fit$infit < 1.4)
-
-table(model$person_fit$outfit < 3, model$person_fit$infit < 3)
-table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
+table(model$person_fit$outfit < 2, model$person_fit$infit < 2)
 
 #
 # Classify DIF phase 1 vs phase 2 using Jodoin/Gierl criteria
 # Classify DIF country using Jodoin/Gierl criteria
 #
 
-DIF <- dfine::calculate_DIF_classification(responses, model)
+# DIF <- dfine::calculate_DIF_classification(responses, model)
+# write.table(
+#   DIF,
+#   file = file.path(path_new, "DIF.csv"),
+#   quote = FALSE,
+#   row.names = FALSE,
+#   sep = "\t",
+#   dec = "."
+# )
+
+#
+#  H. create diagnostic plots
+#
+
+# Calculate D-score for SF and LF separately, removing visits with high infit/outfit values
+# Use dscore 2.0.0 or higher
+
+# LF
+dscore_lf <- responses_lf |>
+  anti_join(to_remove, by = c("subjid", "pair")) |>
+  distinct(
+    cohort,
+    country,
+    subjid,
+    agedays,
+    pair,
+    ins,
+    item,
+    response,
+    .keep_all = TRUE
+  ) |>
+  pivot_wider(
+    id_cols = c(cohort, country, subjid, agedays, pair, ins),
+    names_from = item,
+    values_from = response,
+    values_fill = NA
+  ) |>
+  dscore::dscore(
+    key = "gsed2510",
+    xname = "agedays",
+    xunit = "days"
+  )
+
+# LF
+dscore_sf <- responses_sf |>
+  anti_join(to_remove, by = c("subjid", "pair")) |>
+  distinct(
+    cohort,
+    country,
+    subjid,
+    agedays,
+    pair,
+    ins,
+    item,
+    response,
+    .keep_all = TRUE
+  ) |>
+  pivot_wider(
+    id_cols = c(cohort, country, subjid, agedays, pair, ins),
+    names_from = item,
+    values_from = response,
+    values_fill = NA
+  ) |>
+  dscore::dscore(
+    key = "gsed2510",
+    xname = "agedays",
+    xunit = "days"
+  )
+
+# Remove outliers DAZ < -4 or DAZ > 4
+dscore_lf <- dscore_lf |>
+  filter(daz > -4 & daz < 4)
+dscore_sf <- dscore_sf |>
+  filter(daz > -4 & daz < 4)
+
+# plot D-score against age for LF and SF
+library(ggplot2)
+ggplot2::theme_set(theme_light())
+col_manual <- dfine::get_palette("instrument")
+
+dbind <- bind_rows(
+  bind_cols(ins = "GSED LF", dscore_lf),
+  bind_cols(ins = "GSED SF", dscore_sf)
+) |>
+  mutate(agedays = round(365.25 * a), months = a * 12, ta = log(a + 100))
+
+twoplots <- ggplot(dbind, aes(x = months, y = d)) +
+  geom_point(size = 0.1, shape = 19) +
+  geom_smooth(se = FALSE, color = "grey50") +
+  scale_x_continuous(
+    limits = c(0, 42),
+    breaks = seq(0, 42, by = 6)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 90),
+    breaks = seq(0, 80, by = 20)
+  ) +
+  labs(
+    x = "Age (months)",
+    y = "D-score"
+  ) +
+  facet_grid(. ~ ins) +
+  theme(legend.position = "none")
+
+# save as pdf
+ggsave(
+  filename = file.path(
+    Sys.getenv("GSED_PHASE2"),
+    "202510",
+    "Dscore_age_LF_SF.pdf"
+  ),
+  plot = twoplots,
+  device = "pdf",
+  unit = "cm",
+  width = 30,
+  height = 15,
+)
+
+# Fit reference curves on LF and SF D-scores from dbind
+library("gamlss")
+library("gamlss.ggplots")
+# fit the model
+# NO: selected df <- c(8, 4)
+# BCT: selected df <- c(8, 4, 4, 0)
+
+## some grid search code outcommented
+grid <- expand.grid(df1 = 8, df2 = 4, df3 = 4, df4 = 0)
+grid$family <- "BCT"
+fits <- vector("list", nrow(grid))
+worms <- vector("list", nrow(grid))
+grid$deviance <- NA
+for (i in 1:nrow(grid)) {
+  df <- grid[i, 1:4]
+  # df <- c(8, 2, 0)
+  family <- get(grid$family[i])
+  n.cyc <- 20
+  fits[[i]] <- gamlss(
+    d ~ cs(ta, df = df[1]),
+    sigma.formula = ~ cs(ta, df = df[2]),
+    nu.formula = ~ cs(ta, df = df[3]),
+    tau.formula = ~ cs(ta, df = df[4]),
+    data = dbind,
+    family = family,
+    control = gamlss.control(n.cyc = n.cyc, trace = FALSE)
+  )
+  grid[i, "deviance"] <- round(deviance(fits[[i]]))
+  cat("\n", as.character(grid[i, ]), "\n")
+
+  worms[[i]] <- resid_wp_wrap(
+    fits[[i]],
+    xvar = dbind$a,
+    n_inter = 16,
+    ylim = 0.4,
+    title = paste(
+      "family =",
+      grid$family[i],
+      ",",
+      "   df =",
+      paste(df, collapse = ", "),
+      "   dev =",
+      grid[i, "deviance"]
+    )
+  )
+}
+
+
+worms
+# lapply(fits, deviance)
+# lapply(fits, plot)
+
+i <- 1
+centiles(
+  fits[[i]],
+  xvar = dbind$agedays,
+  cent = round(100 * pnorm(c(-2.5, -2:2, 2.5)), 1),
+  legend = FALSE,
+  main = paste(
+    "Model: ",
+    paste(grid[i, ], collapse = ", ")
+  )
+)
+
+# grid for reference table (all weeks in data range)
+fit <- fits[[i]]
+rx <- range(dbind$agedays, na.rm = TRUE)
+rxweeks <- (floor(rx[1] / 7)):(ceiling(rx[2] / 7))
+grid_x <- (0:186) * 7
+raster <- data.frame(
+  agedays = grid_x,
+  a = grid_x,
+  ta = log(100 + grid_x / 365.25)
+)
+
+# calculate and round reference table
+p <- predictAll(fit, newdata = raster, type = "response")
+reference <- data.frame(raster, p) |>
+  transmute(
+    day = agedays,
+    week = round(day / 7, 2),
+    month = round(day / (365.25 / 12), 2),
+    year = round(day / 365.25, 4),
+    mu = round(mu, 2),
+    sigma = round(sigma, 4),
+    nu = round(nu, 4),
+    tau = round(tau, 3)
+  ) |>
+  select(day, week, month, year, mu, sigma, nu, tau)
+# append age = 5 reference (extrapolated, linearly)
+add <- tail(reference, 1)
+add$day <- 1826
+add$week <- 261
+add$month <- 60
+add$year <- 5
+add$mu <- round(63.12173 + 3.844458 * 5, 2)
+reference <- bind_rows(reference, add)
+
+# write reference table
 write.table(
-  DIF,
-  file = file.path(path_new, "DIF.csv"),
+  reference,
+  file = file.path(path_new, "who_descriptive_gsed2510.txt"),
   quote = FALSE,
   row.names = FALSE,
   sep = "\t",
   dec = "."
 )
 
+# Calculate the parts for the prior mean function `dscore:::count_mu_phase2()`
+#
+# Descriptive references
+# ref1 <- reference[reference$age < 0.75, ]
+# ref2 <- reference[reference$age >= 0.75 & reference$age < 3.5, ]
+# ref3 <- reference[reference$age > 3, ]
+#
+# Count model: < 9MND:
+# summary(mod <- lm(formula = mu ~ age + log(age + 10), data = ref1))
+# -2775.83728 - 75.02296 age + 1210.41737 log(age + 10)
+#
+# Count model: > 9MND & < 3.5 YR
+# summary(mod <- lm(formula = mu ~ age + I(log(age + 0.25)), data = ref2))
+# 46.69057068 - 6.42038876 age + 39.77773960 log(age + 0.25)
+#
+# Linear model: > 3.5 YRS: 63.12172890 + 3.84445765 age
+
+# # per cohort
+# col_manual <- dfine::get_palette("cohort")
+# plotdata <- model$dscore |>
+#   mutate(cohort = dfine::calculate_cohort(subjid))
+# cohortplot_y <- dfine::plot_d_a_cohort(
+#   data = plotdata,
+#   show_smooth = FALSE,
+#   model_name = model$name,
+#   file = NULL,
+#   ref_name = "preliminary_standards",
+#   xlim = c(0, 42),
+#   ylim = c(0, 90),
+#   col_manual = col_manual,
+#   size = 0.5,
+#   shape = 19
+# )
+# cohortplot_z <- dfine::plot_d_a_cohort(
+#   data = plotdata,
+#   daz = TRUE,
+#   show_smooth = TRUE,
+#   model_name = model$name,
+#   file = NULL,
+#   ref_name = "preliminary_standards",
+#   xlim = c(0, 42),
+#   ylim = c(-3, 3),
+#   ybreaks = c(-3, -2, -1, 0, 1, 2, 3),
+#   col_manual = col_manual,
+#   size = 1,
+#   shape = 19,
+#   smooth_line_color = "grey35"
+# )
+
+# # Calculate means per cohort
+# dscore <- model$dscore |>
+#   mutate(cohort = dfine::calculate_cohort(subjid)) |>
+#   summarize(
+#     d = mean(d, na.rm = TRUE),
+#     daz = mean(daz, na.rm = TRUE),
+#     sem = mean(sem, na.rm = TRUE),
+#     n = n(),
+#     .by = c("cohort")
+#   )
+
 # Diagnostic plots not yet working with dmetric/dfine
-#
-#  H. create diagnostic plots
-#
-
-library(ggplot2)
-ggplot2::theme_set(theme_light())
-col_manual <- dfine::get_palette("cohort")
-plotdata <- model$dscore |>
-  mutate(cohort = dfine::calculate_cohort(subjid))
-cohortplot_y <- dfine::plot_d_a_cohort(
-  data = plotdata,
-  show_smooth = FALSE,
-  model_name = model$name,
-  file = NULL,
-  ref_name = "preliminary_standards",
-  xlim = c(0, 42),
-  ylim = c(0, 90),
-  col_manual = col_manual,
-  size = 1,
-  shape = 19
-)
-cohortplot_z <- dfine::plot_d_a_cohort(
-  data = plotdata,
-  daz = TRUE,
-  show_smooth = TRUE,
-  model_name = model$name,
-  file = NULL,
-  ref_name = "preliminary_standards",
-  xlim = c(0, 42),
-  ylim = c(-3, 3),
-  ybreaks = c(-3, -2, -1, 0, 1, 2, 3),
-  col_manual = col_manual,
-  size = 1,
-  shape = 19,
-  smooth_line_color = "grey35"
-)
-
-# Calculate means per cohort
-dscore <- model$dscore |>
-  mutate(cohort = dfine::calculate_cohort(subjid)) |>
-  summarize(
-    d = mean(d, na.rm = TRUE),
-    daz = mean(daz, na.rm = TRUE),
-    sem = mean(sem, na.rm = TRUE),
-    n = n(),
-    .by = c("cohort")
-  )
-
+# plot_pdf <- TRUE
 # if (plot_pdf) {
-# r <- dmetric::plot_dmodel(data = responses,
-#                           model = model,
-#                           path = path,
-#                           col.manual = col.manual,
-#                           ref_name = "preliminary_standards",
-#                           maxy = 100,
-#                           xlim = c(0, 100),
-#                           xbreaks = seq(0, 100, 10))
+#   r <- dmetric::plot_dmodel(
+#     data = responses,
+#     model = model,
+#     path = path,
+#     col.manual = col.manual,
+#     ref_name = "preliminary_standards",
+#     maxy = 100,
+#     xlim = c(0, 100),
+#     xbreaks = seq(0, 100, 10)
+#   )
 # }
 
 # We do not need to check D-score/logit each time, so outcomment for now

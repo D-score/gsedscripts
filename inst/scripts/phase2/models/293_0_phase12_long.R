@@ -1,9 +1,9 @@
 # This script refits the core model 293_0 for the phase-1&2 data
 #
 # Dependencies:
-# + Environmental variable "GSED_PHASE1" must be set to the local directory
+#   Environmental variable "GSED_PHASE1" must be set to the local directory
 #   containing the models for phase 1 (will be used only for reading)
-# + Environmental variable "GSED_PHASE2" must be set to the local directory
+#   Environmental variable "GSED_PHASE2" must be set to the local directory
 #   containing the models for phase 2 (will be used for writing)
 #
 # TODO
@@ -29,8 +29,15 @@ if (!exists("phases")) {
   phases <- c(1, 2)
 }
 if (!exists("cohorts")) {
-  cohorts <- c("GSED-BGD", "GSED-BRA", "GSED-CHN",
-               "GSED-CIV", "GSED-NLD", "GSED-PAK", "GSED-TZA")
+  cohorts <- c(
+    "GSED-BGD",
+    "GSED-BRA",
+    "GSED-CHN",
+    "GSED-CIV",
+    "GSED-NLD",
+    "GSED-PAK",
+    "GSED-TZA"
+  )
 }
 if (!exists("instruments")) {
   instruments <- c("sf", "lf")
@@ -50,7 +57,9 @@ if (!requireNamespace(pkg, quietly = TRUE) && interactive()) {
   if (answer) remotes::install_github("d-score/dfine")
 }
 require("dfine", quietly = TRUE, warn.conflicts = FALSE)
-if (packageVersion("dfine") < "0.13.0") stop("Needs dfine 0.13.0")
+if (packageVersion("dfine") < "0.13.0") {
+  stop("Needs dfine 0.13.0")
+}
 
 # Load CRAN packages
 library("DBI", quietly = TRUE, warn.conflicts = FALSE)
@@ -78,14 +87,18 @@ dbDisconnect(con)
 #
 
 visits <- visits |>
-  filter(phase %in% phases &
-           cohort %in% cohorts &
-           ins %in% instruments &
-           vist_type != 5L)
+  filter(
+    phase %in%
+      phases &
+      cohort %in% cohorts &
+      ins %in% instruments &
+      vist_type != 5L
+  )
 responses <- semi_join(
   responses,
   visits,
-  by = c("subjid", "agedays", "vist_type"))
+  by = c("subjid", "agedays", "vist_type")
+)
 
 #
 # C. Add country and cohort fields to responses
@@ -96,7 +109,8 @@ responses <- responses |>
     visits |>
       distinct(cohort, subjid, agedays, vist_type) |>
       mutate(country = substr(cohort, 6, 8)),
-    by = c("subjid", "agedays", "vist_type")) |>
+    by = c("subjid", "agedays", "vist_type")
+  ) |>
   select(cohort, country, subjid, agedays, vist_type, item, response)
 
 #
@@ -112,10 +126,18 @@ responses <- responses |>
 # - restore agedays where possible
 
 responses <- responses |>
-  filter(!(subjid %in% c("076-GSED-0528", "076-GSED-0905", "076-GSED-0905",
-                         "076-GSED-1322",
-                         "384-GSED-1160", "384-GSED-1323",
-                         "528-GSED-0581"))) |>
+  filter(
+    !(subjid %in%
+      c(
+        "076-GSED-0528",
+        "076-GSED-0905",
+        "076-GSED-0905",
+        "076-GSED-1322",
+        "384-GSED-1160",
+        "384-GSED-1323",
+        "528-GSED-0581"
+      ))
+  ) |>
   filter(!is.na(agedays))
 
 # NOTE: END TEMPORARY FIXES
@@ -157,10 +179,11 @@ responses_sf <- responses |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 responses_lf <- responses |>
   filter(item %in% items_lf) |>
-  left_join(pairs |> filter(pair > 0),
-            by = join_by(subjid, agedays == lf_agedays)) |>
-  mutate(pair = ifelse(is.na(pair), -agedays, pair),
-         ins = "lf") |>
+  left_join(
+    pairs |> filter(pair > 0),
+    by = join_by(subjid, agedays == lf_agedays)
+  ) |>
+  mutate(pair = ifelse(is.na(pair), -agedays, pair), ins = "lf") |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 
 # Check for zero duplicate matches
@@ -190,13 +213,19 @@ responses <- responses |>
 #
 
 min_n <- 10
-items <- c(get_itemnames(ins = "gpa", order = "indm"),
-           get_itemnames(ins = "gto"))
+items <- c(
+  get_itemnames(ins = "gpa", order = "indm"),
+  get_itemnames(ins = "gto")
+)
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items <- intersect(items, valid_items)
@@ -221,9 +250,7 @@ responses <- responses |>
 #  F. Estimate tau of SF and LF items by a single group design
 #
 
-fit <- rasch(data = responses,
-             visit_var = c("subjid", "pair"),
-             items = items)
+fit <- rasch(data = responses, visit_var = c("subjid", "pair"), items = items)
 
 #
 #  G. Calculate the dmodel object
@@ -247,14 +274,16 @@ if (length(cohorts) == 1) {
 #
 # NOTE: transform = "auto"  runs a linear regresion model to find the
 # intercept and slope that predict the gsed2406 tau values
-model <- calculate_dmodel(data = responses,
-                          fit = fit,
-                          name = model_name_add,
-                          population = "preliminary_standards",
-                          # anchors = c(gtogmd001 = 20, gtogmd026 = 40))
-                          # anchors = c(gtogmd001 = 17.94, gtogmd026 = 41.08))
-                          # transform = c(55.86, 4.1))
-                          transform = "auto")
+model <- calculate_dmodel(
+  data = responses,
+  fit = fit,
+  name = model_name_add,
+  population = "preliminary_standards",
+  # anchors = c(gtogmd001 = 20, gtogmd026 = 40))
+  # anchors = c(gtogmd001 = 17.94, gtogmd026 = 41.08))
+  # transform = c(55.86, 4.1))
+  transform = "auto"
+)
 
 item_fit <- model$item_fit
 
@@ -264,7 +293,9 @@ model_old <- readRDS(file.path(path_old, "model.Rds"))
 data_old <- readRDS(file.path(path_old, "data.Rds"))
 
 path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202507", model$name)
-if (!dir.exists(path_new)) dir.create(path_new)
+if (!dir.exists(path_new)) {
+  dir.create(path_new)
+}
 saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
 
 #
@@ -273,27 +304,55 @@ saveRDS(model, file = file.path(path_new, "model.Rds"), compress = "xz")
 
 tau_tau <- dfine::plot_tau_contrast(model, model_old, detrended = FALSE)
 dif_tau <- dfine::plot_tau_contrast(model, model_old)
-htmlwidgets::saveWidget(tau_tau,
-                        file = file.path(path_new, "tau_tau.html"),
-                        selfcontained = TRUE)
-htmlwidgets::saveWidget(dif_tau,
-                        file = file.path(path_new, "dif_tau.html"),
-                        selfcontained = TRUE)
+htmlwidgets::saveWidget(
+  tau_tau,
+  file = file.path(path_new, "tau_tau.html"),
+  selfcontained = TRUE
+)
+htmlwidgets::saveWidget(
+  dif_tau,
+  file = file.path(path_new, "dif_tau.html"),
+  selfcontained = TRUE
+)
 
 # Person (=visit) fit histograms
 
 oldpar <- par(mfrow = c(2, 2))
-hist(model$person_fit$outfit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Person outfit", xlab = "", ylim = c(0, 2.6))
-hist(model$person_fit$infit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Person infit", xlab = "", ylim = c(0, 2.6))
+hist(
+  model$person_fit$outfit,
+  xlim = c(0, 5),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Person outfit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
+hist(
+  model$person_fit$infit,
+  xlim = c(0, 5),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Person infit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
 
 # Item fit histograms
 
-hist(model$item_fit$outfit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Item outfit", xlab = "", ylim = c(0, 2.6))
-hist(model$item_fit$infit, xlim = c(0, 5), breaks = c(seq(0, 5, 0.1), Inf),
-     main = "Item infit", xlab = "", ylim = c(0, 2.6))
+hist(
+  model$item_fit$outfit,
+  xlim = c(0, 5),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Item outfit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
+hist(
+  model$item_fit$infit,
+  xlim = c(0, 5),
+  breaks = c(seq(0, 5, 0.1), Inf),
+  main = "Item infit",
+  xlab = "",
+  ylim = c(0, 2.6)
+)
 par(oldpar)
 
 
@@ -308,7 +367,6 @@ table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
 # TODO
 # Create DIF plots for phase 1 vs phase 2
 # Create DIF plots by cohort
-
 
 # TODO: Diagnostic plots not yet working with dmetric/dfine
 #
@@ -327,7 +385,6 @@ table(model$person_fit$outfit < 4, model$person_fit$infit < 4)
 #                             xlim = c(0, 100),
 #                             xbreaks = seq(0, 100, 10))
 # }
-
 
 # We do not need to check D-score/logit each time, so outcomment for now
 # #
