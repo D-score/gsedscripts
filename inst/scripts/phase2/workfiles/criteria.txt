@@ -1,0 +1,12 @@
+From Cavalerra et al. 2023. BMJ Global Health
+
+1. Below secondary maternal education (<6 years of schooling)
+2. Birth weight <2500 g
+3. Gestational age <37 completed weeks (259 days) and ≥42 completed weeks (294 days) (assessed by
+ultrasound)
+4. Undernutrition (weight for age, length for age, OR weight for height Z score of <–2 on the WHO Child
+Growth Standards) at the time of developmental assessment
+5. Known severe congenital birth defect
+6. History of birth asphyxia OR neonatal sepsis requiring hospitalisation
+7. Known neurodevelopmental disorder/disability (Severe visual problems, seizures, hearing impairment)
+OR other chronic health problems (ie, congenital heart disease)

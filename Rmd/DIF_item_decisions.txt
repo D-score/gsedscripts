@@ -1,0 +1,48 @@
+
+DIF |> filter(phase == "large")
+       item phase   BGD   BRA CHN   CIV NLD   PAK   TZA
+1 gpalgc098 large    no    no  no large  no    no    no  ACCEPT
+2 gtolgd011 large    no large  no    no  no    no large  REMOVE
+3 gtolgd018 large large large  no large  no    no    no  ACCEPT
+4 gtolgd026 large    no    no  no    no  no    no    no  ACCEPT
+5 gtogmd043 large large large  no large  no large    no  ACCEPT
+
+> DIF |> filter(phase == "moderate")
+       item    phase      BGD      BRA      CHN CIV NLD      PAK      TZA
+1 gpasec088 moderate       no       no       no  no  no       no       no  ACCEPT
+2 gpasec134 moderate       no       no       no  no  no       no       no  ACCEPT
+3 gtogmd003 moderate       no       no       no  no  no    large       no  ACCEPT (PAK) 
+4 gtolgd003 moderate moderate       no moderate  no  no       no moderate  REMOVE
+5 gtolgd004 moderate       no       no       no  no  no moderate       no  REMOVE
+6 gtolgd049 moderate       no moderate       no  no  no       no       no  ACCEPT
+7 gtolgd052 moderate       no    large moderate  no  no       no       no  ACCEPT (BRA)
+8 gtofmd053 moderate       no       no moderate  no  no       no       no  ACCEPT
+
+
+OTHERS:
+  gtolgd051 no             no       no        no no  no       no       no  ACCEPT (BRA)
+
+> filter(DIF_classification, item == "gpalgc072")
+      item phase BGD BRA   CHN   CIV NLD PAK TZA
+1 gpalgc072    no  no  no large large  no  no  no ACCEPT
+
+
+--- SECOND ROUND
+
+> DIF |> filter(phase == "large")
+       item phase   BGD   BRA   CHN   CIV NLD   PAK   TZA
+1 gpamoc076 large large    no large    no  no    no    no  ACCEPT
+2 gpamoc106 large large    no large large  no large large  ACCEPT
+3 gtolgd030 large    no    no    no    no  no    no    no  ACCEPT
+4 gtogmd043 large large large    no large  no large    no  ACCEPT
+5 gtogmd003 large    no    no    no    no  no large    no  ACCEPT (PAK)
+
+> DIF |> filter(phase == "moderate")
+       item    phase      BGD      BRA      CHN CIV NLD   PAK TZA
+1 gpasec088 moderate       no       no       no  no  no    no  no  ACCEPT
+2 gpasec134 moderate       no       no       no  no  no    no  no  ACCEPT
+3 gpalac001 moderate       no       no       no  no  no large  no  ACCEPT
+4 gtogmd002 moderate       no       no       no  no  no large  no  ACCEPT (PAK)
+5 gtolgd049 moderate       no moderate       no  no  no    no  no  ACCEPT
+6 gtofmd053 moderate moderate       no moderate  no  no    no  no  ACCEPT
+

@@ -1,0 +1,31 @@
+MODEL "293_0_phase_1+2"
+
+infit > 1.20
+
+   item          n outfit     qo outfit_z infit     qi infit_z
+   <chr>     <int>  <dbl>  <dbl>    <dbl> <dbl>  <dbl>   <dbl>
+ 1 gtofmd005  4526   2.98 0.0649    20.3   1.73 0.0261   23.1   REMOVE
+ 2 gtolgd009  5474   3.22 0.0711    20.2   1.70 0.0263   22.2   REMOVE
+ 3 gtolgd011  4110   1.60 0.0797     6.38  1.46 0.0248   16.1   ACCEPT
+ 4 gtogmd035  3822   2.10 0.0599    14.1   1.41 0.0207   17.6   REMOVE
+ 5 gtolgd012  4809   2.08 0.0741    11.2   1.39 0.0233   14.9   ACCEPT
+ 6 gtofmd031  3633   1.62 0.0353    14.9   1.32 0.0192   15.3   REMOVE
+ 7 gtolgd010  5129   1.38 0.0783     4.40  1.30 0.0232   12.0   ACCEPT
+ 8 gpamoc103  3943   1.64 0.0402    13.3   1.29 0.0180   14.8   ACCEPT
+ 9 gtofmd029  3380   1.61 0.0538     9.63  1.27 0.0221   11.4   REMOVE
+10 gpasec088  3449   1.45 0.0592     6.68  1.26 0.0202   12.1   ACCEPT
+11 gpasec123  3104   1.45 0.0268    14.6   1.26 0.0166   14.4   ACCEPT
+12 gtolgd015  3169   1.59 0.0522     9.57  1.24 0.0235    9.63  ACCEPT
+13 gtofmd016  2086   1.38 0.0552     6.21  1.24 0.0266    8.40  REMOVE
+14 gpasec082  2760   1.85 0.110      6.26  1.24 0.0367    6.06  REMOVE
+15 gtofmd041  3312   1.34 0.0374     8.16  1.22 0.0211    9.87  REMOVE
+16 gpasec085  2722   1.43 0.0503     7.61  1.22 0.0255    8.11  ACCEPT
+17 gpalgc059  3378   1.80 0.0551    11.7   1.22 0.0224    9.12  ACCEPT
+18 gtolgd019  2241   1.52 0.0545     8.23  1.21 0.0274    7.08  ACCEPT
+
+
+OTHERS
+
+gtolgd012 trunc at 18 mo
+gtofmd009 trunc at 12 mo
+
