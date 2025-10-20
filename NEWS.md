@@ -1,3 +1,9 @@
+# gsedscripts 0.27.1
+
+- Adds `by_extension_3.R` and `contourplot_by3.R` scripts to support the `by3` extension procedure for key `gsed2510`
+- Adds diagnostic info from fitting key `gsed2510`
+- Reformats to conform to aiR standards
+
 # gsedscripts 0.27.0
 
 - Major update to create new key `gsed2510`. 
