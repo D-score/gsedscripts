@@ -2,8 +2,12 @@
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(metR)
 library(fields)
 library(tibble)
+
+path_new <- file.path(Sys.getenv("GSED_PHASE2"), "202510", "544_0_ext_by3")
+select_me <- readRDS(file.path(path_new, "select_me_include_true.Rds"))
 
 # --- 1) Matrix -> tidy with parsed axes (handles "Inf") -----------------------
 
@@ -78,7 +82,7 @@ grid$z <- pmin(pmax(grid$z, z_range[1]), z_range[2])
 p_filled <- ggplot(grid, aes(x = infit_plot, y = outfit_plot, z = z)) +
   geom_point(
     data = data.frame(
-      infit_plot = c(1.3, 1.4, 1.5),
+      infit_plot = c(1.2, 1.3, 1.4),
       outfit_plot = c(1.3, 1.4, 1.5)
     ),
     aes(x = infit_plot, y = outfit_plot),
@@ -107,13 +111,13 @@ p_filled <- ggplot(grid, aes(x = infit_plot, y = outfit_plot, z = z)) +
     "Infit",
     breaks = xp$breaks,
     labels = xp$labels,
-    expand = expansion(mult = c(0.01, 0.05))
+    expand = expansion(mult = c(0, 0))
   ) +
   scale_y_continuous(
     "Outfit",
     breaks = yp$breaks,
     labels = yp$labels,
-    expand = expansion(mult = c(0.01, 0.05))
+    expand = expansion(mult = c(0, 0))
   ) +
   coord_fixed() +
   labs(
@@ -195,7 +199,7 @@ p_sem <- ggplot(grid, aes(x = infit_plot, y = outfit_plot, z = z)) +
   # geom_contour_filled(breaks = brks) +
   geom_point(
     data = data.frame(
-      infit_plot = c(1.3, 1.4, 1.5),
+      infit_plot = c(1.2, 1.3, 1.4),
       outfit_plot = c(1.3, 1.4, 1.5)
     ),
     aes(x = infit_plot, y = outfit_plot),
@@ -218,13 +222,13 @@ p_sem <- ggplot(grid, aes(x = infit_plot, y = outfit_plot, z = z)) +
     "Infit",
     breaks = xp$breaks,
     labels = xp$labels,
-    expand = expansion(mult = c(0.01, 0.05))
+    expand = expansion(mult = c(0, 0))
   ) +
   scale_y_continuous(
     "Outfit",
     breaks = yp$breaks,
     labels = yp$labels,
-    expand = expansion(mult = c(0.01, 0.05))
+    expand = expansion(mult = c(0, 0))
   ) +
   coord_fixed() +
   labs(
@@ -242,5 +246,11 @@ p_combined <- p_filled +
   plot_layout(ncol = 2, guides = "collect") &
   theme(legend.position = "bottom")
 p_combined
-ggsave("contours.pdf", p_combined, width = 12, height = 6, dpi = 300)
+ggsave(
+  "contours_include_true.pdf",
+  p_combined,
+  width = 12,
+  height = 6,
+  dpi = 300
+)
 # End of code
