@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gsedscripts</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.26.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.27.1</span>
       </span>
     </div>
 
@@ -42,6 +42,22 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="0.27.1" id="gsedscripts-0271">gsedscripts 0.27.1<a class="anchor" aria-label="anchor" href="#gsedscripts-0271"></a></h2>
+<ul><li>Adds <code>by_extension_3.R</code> and <code>contourplot_by3.R</code> scripts to support the <code>by3</code> extension procedure for key <code>gsed2510</code>
+</li>
+<li>Adds diagnostic info from fitting key <code>gsed2510</code>
+</li>
+<li>Reformats to conform to aiR standards</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.27.0" id="gsedscripts-0270">gsedscripts 0.27.0<a class="anchor" aria-label="anchor" href="#gsedscripts-0270"></a></h2>
+<ul><li>Major update to create new key <code>gsed2510</code>.</li>
+<li>Updates all scripts to use the <code>gs1</code> and <code>gl1</code> instrument codes for GSED SF and LF, respectively</li>
+<li>Adapts scripts to gsed3 lexicon</li>
+<li>Moves <code>calculate_DIF_classification()</code> and <code>calculate_DIF_table()</code> from gsedscripts (0.27.0) to dfine package (0.13.0)</li>
+<li>Moves <code>build_database_fixed.R</code> from <code>gsedread</code> to <code>gsedscripts</code> package</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="0.26.0" id="gsedscripts-0260">gsedscripts 0.26.0<a class="anchor" aria-label="anchor" href="#gsedscripts-0260"></a></h2>
 <ul><li>Add some improvements to scripts</li>
 <li>Prepare for reproducibility</li>
@@ -52,7 +68,7 @@
 <li><p>Adds many scripts to <code>inst/scripts/phase2</code> directory to help fitting the new phase_1+2 models</p></li>
 <li><p>Removes <code>DUCKDB_LOCAL</code> system variable from all scripts</p></li>
 <li><p>All scripts depends now only on system variables <code>GSED_PHASE1</code> and <code>GSED_PHASE2</code></p></li>
-<li><p>Adds <code><a href="../reference/calculate_DIF_classification.html">calculate_DIF_classification()</a></code> to test for DIF by phase and country</p></li>
+<li><p>Adds <code>calculate_DIF_classification()</code> to test for DIF by phase and country</p></li>
 <li><p>Extend scripts <code>plot_pass_age.R</code> and <code>plot_pass_dscore.R</code> with BSID and apply system variables <code>GSED_PHASE1</code> and <code>GSED_PHASE2</code></p></li>
 <li><p>Adds generic script <code>phase2/fit_core_model.R</code> which replaces <code>293_phase1_long.R</code>, <code>293_phase2_wide.R</code></p></li>
 <li>
@@ -100,7 +116,7 @@
 <ul><li>Updates <code>scripts/models/293_0.R</code> to use DIF tabulation function and explore Yen’s Q3 method for exploring dimensionality</li>
 <li>Updates <code>scripts/models/lf_155_0.R</code> to feature newer functions and to compact code</li>
 <li>Adds <code>scripts/DIF_demo_2groups.R</code> to shows how to use the <code>difR</code> package in the SMOCC data for testing 2-group DIF with MH and logistic regression methods</li>
-<li>Adds <code><a href="../reference/calculate_DIF_table.html">calculate_DIF_table()</a></code> for testing DIF</li>
+<li>Adds <code>calculate_DIF_table()</code> for testing DIF</li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.17.0" id="gsedscripts-0170">gsedscripts 0.17.0<a class="anchor" aria-label="anchor" href="#gsedscripts-0170"></a></h2>
