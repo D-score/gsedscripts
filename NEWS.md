@@ -1,3 +1,5 @@
+- Adds some additional analyses for reporting to `by_extension_3.R`
+
 # gsedscripts 0.27.1
 
 - Adds `by_extension_3.R` and `contourplot_by3.R` scripts to support the `by3` extension procedure for key `gsed2510`

@@ -823,10 +823,210 @@ ib <- model2$itembank |>
   mutate(key = "gsed2510", tau = round(tau, 2)) |>
   filter(strtrim(item, 3) == "by3") |>
   select(key, item, tau)
-write.table(
-  ib,
-  file = file.path(path, "gsed2510-by3.txt"),
-  quote = FALSE,
-  sep = "\t",
-  row.names = FALSE
+# write.table(
+#   ib,
+#   file = file.path(path, "gsed2510-by3.txt"),
+#   quote = FALSE,
+#   sep = "\t",
+#   row.names = FALSE
+# )
+
+#
+#  S. Additional analyses for reporting
+#
+
+# Tabulate visits per cohort
+visit_table <- responses |>
+  distinct(cohort, subjid, pair, ins) |>
+  count(cohort, ins) |>
+  arrange(cohort) |>
+  pivot_wider(
+    names_from = ins,
+    values_from = n,
+    values_fill = 0
+  )
+
+# Create scatterplots of D-score for LF, SF vs BSID III by cohort
+library(ggplot2)
+
+plot_dd <- function(data, xvar, yvar, thin = FALSE) {
+  # Compute correlation between xvar and yvar
+  corr <- cor(data[[xvar]], data[[yvar]], use = "complete.obs")
+  corr_label <- sprintf("r = %.3f", corr)
+  size <- ifelse(thin, 0.1, 0.7)
+  pointcol <- ifelse(thin, "black", "black")
+
+  p <- ggplot(data = data) +
+    geom_abline(slope = 1, intercept = 0, color = "orange") +
+    geom_point(
+      mapping = aes_string(x = xvar, y = yvar),
+      size = size,
+      alpha = 0.2,
+      color = pointcol
+    ) +
+    annotate(
+      "text",
+      x = 2,
+      y = 88, # Adjust if needed based on data range
+      label = corr_label,
+      hjust = 0,
+      size = 4,
+      fontface = "bold"
+    ) +
+    xlab(paste0(xvar, " D-score")) +
+    ylab(paste0(yvar, " D-score")) +
+    scale_x_continuous(limits = c(0, 90), breaks = seq(0, 90, by = 10)) +
+    scale_y_continuous(limits = c(0, 90), breaks = seq(0, 90, by = 10)) +
+    coord_fixed() +
+    theme_light()
+
+  return(p)
+}
+
+g1 <- plot_dd(
+  data = d_combined,
+  xvar = "SF",
+  yvar = "LF",
+  thin = TRUE
+)
+g2 <- plot_dd(
+  data = d_combined,
+  xvar = "SF",
+  yvar = "BSID_III"
+)
+g3 <- plot_dd(
+  data = d_combined,
+  xvar = "LF",
+  yvar = "BSID_III"
+)
+
+# bland-altman plots
+plot_ba <- function(data, xvar, yvar, thin = FALSE) {
+  data <- data |>
+    mutate(
+      mean = (get(xvar) + get(yvar)) / 2,
+      diff = get(yvar) - get(xvar)
+    )
+  sd <- sd(data$diff, na.rm = TRUE)
+  me <- mean(data$diff, na.rm = TRUE)
+  lower <- me - 1.96 * sd
+  upper <- me + 1.96 * sd
+  size <- ifelse(thin, 0.2, 0.7)
+  p <- ggplot(data = data) +
+    geom_hline(yintercept = c(lower, me, upper), color = "orange") +
+    geom_point(
+      mapping = aes_string(x = "mean", y = "diff"),
+      size = size,
+      alpha = 0.2,
+      color = "black"
+    ) +
+    xlab(paste0(" Mean")) +
+    ylab(paste0(" Difference")) +
+    scale_x_continuous(limits = c(0, 90), breaks = seq(0, 90, by = 10)) +
+    scale_y_continuous(limits = c(-12, 12), breaks = seq(-12, 12, by = 2)) +
+    coord_fixed(ratio = 90 / 24) +
+    theme_light()
+  return(p)
+}
+
+b1 <- plot_ba(
+  data = d_combined,
+  xvar = "SF",
+  yvar = "LF",
+  thin = TRUE
+)
+b2 <- plot_ba(
+  data = d_combined,
+  xvar = "SF",
+  yvar = "BSID_III"
+)
+b3 <- plot_ba(
+  data = d_combined,
+  xvar = "LF",
+  yvar = "BSID_III"
+)
+
+plot_daz <- function(data, xvar, yvar, thin = FALSE) {
+  xcol <- paste0(xvar, "_DAZ")
+  ycol <- paste0(yvar, "_DAZ")
+
+  # Compute correlation (removing missing values)
+  corr <- cor(data[[xcol]], data[[ycol]], use = "complete.obs")
+  corr_label <- sprintf("r = %.2f", corr)
+  size <- ifelse(thin, 0.2, 0.7)
+
+  p <- ggplot(data = data) +
+    geom_abline(slope = 1, intercept = 0, color = "orange") +
+    stat_ellipse(
+      mapping = aes_string(x = xcol, y = ycol),
+      level = 0.90,
+      color = "orange",
+      linewidth = 0.5
+    ) +
+    geom_point(
+      mapping = aes_string(x = xcol, y = ycol),
+      size = size,
+      alpha = 0.2,
+      color = "black"
+    ) +
+    annotate(
+      "text",
+      x = -2.8,
+      y = 2.8,
+      label = corr_label,
+      hjust = 0,
+      size = 4,
+      fontface = "bold"
+    ) +
+    xlab(paste0(xvar, " DAZ")) +
+    ylab(paste0(yvar, " DAZ")) +
+    scale_x_continuous(limits = c(-3, 3), breaks = seq(-3, 3, by = 1)) +
+    scale_y_continuous(limits = c(-3, 3), breaks = seq(-3, 3, by = 1)) +
+    coord_fixed() +
+    theme_light()
+
+  return(p)
+}
+
+daz1 <- plot_daz(
+  data = d_combined,
+  xvar = "SF",
+  yvar = "LF",
+  thin = TRUE
+)
+daz2 <- plot_daz(
+  data = d_combined,
+  xvar = "SF",
+  yvar = "BSID_III"
+)
+daz3 <- plot_daz(
+  data = d_combined,
+  xvar = "LF",
+  yvar = "BSID_III"
+)
+
+library(patchwork)
+
+# Combine the plots
+combined_plot <- (g1 | g2 | g3) /
+  (b1 | b2 | b3) /
+  (daz1 | daz2 | daz3)
+
+# Save as PDF
+ggsave(
+  "combined_plot.pdf",
+  combined_plot,
+  width = 12,
+  height = 12,
+  units = "in"
+)
+
+# Save as PNG
+ggsave(
+  "combined_plot.png",
+  combined_plot,
+  width = 12,
+  height = 12,
+  units = "in",
+  dpi = 300
 )
