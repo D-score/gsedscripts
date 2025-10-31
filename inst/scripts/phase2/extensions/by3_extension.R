@@ -184,7 +184,7 @@ library("dscore", quietly = TRUE, warn.conflicts = FALSE)
 
 dbfile <- file.path(Sys.getenv("GSED_PHASE2"), "data/fixed.duckdb")
 con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
-dbListTables(con)
+# dbListTables(con)
 visits <- dbReadTable(con, "visits")
 responses <- dbReadTable(con, "responses")
 dbDisconnect(con)
@@ -1027,6 +1027,157 @@ ggsave(
   combined_plot,
   width = 12,
   height = 12,
+  units = "in",
+  dpi = 300
+)
+
+# Visualise DAZ-score distributions by boxplots for all cohorts
+# that collected BSID-III data
+con <- dbConnect(duckdb::duckdb(), dbdir = dbfile)
+visits1 <- dbReadTable(con, "visits")
+responses1 <- dbReadTable(con, "responses")
+dbDisconnect(con)
+
+responses1 <- responses1 |>
+  left_join(
+    visits1 |>
+      distinct(cohort, subjid, agedays, vist_type) |>
+      mutate(country = substr(cohort, 6, 8)),
+    by = c("subjid", "agedays", "vist_type")
+  ) |>
+  select(cohort, country, subjid, agedays, vist_type, item, response)
+
+bsid <- bind_rows(responses1, responses2) |>
+  filter(item %in% items_by3) |>
+  select(cohort, subjid, agedays, item, response) |>
+  pivot_wider(
+    names_from = c(item),
+    values_from = response,
+    id_cols = c(subjid, agedays, cohort)
+  ) |>
+  arrange(subjid, agedays)
+
+d <- bsid |>
+  dscore::dscore(
+    items = items_by3,
+    key = "gsed2510",
+    population = "who_descriptive",
+    xname = "agedays",
+    xunit = "days"
+  )
+result <- data.frame(
+  cohort = bsid$cohort,
+  age = bsid$agedays / 365.25,
+  d = d$d,
+  daz = d$daz
+) |>
+  mutate(
+    d = ifelse(daz < -4 | daz > 4, NA, d),
+    daz = ifelse(daz < -4 | daz > 4, NA, daz)
+  )
+
+# filter on ages < 3
+result <- result |>
+  filter(age < 4) |>
+  dplyr::mutate(
+    age_group = cut(
+      age,
+      breaks = c(0, 1, 2, 3),
+      labels = c("0-1", "1-2", "2-3")
+    )
+  )
+
+ggplot(result, aes(x = cohort, y = daz)) +
+  geom_violin(fill = "lightgray") +
+  geom_jitter(width = 0.1, alpha = 0.2, size = 0.7) +
+  stat_summary(fun = "median", geom = "point", color = "red", size = 2) +
+  theme_light() +
+  ylab("DAZ") +
+  xlab("Cohort") +
+  coord_flip()
+
+library(ggplot2)
+library(ggridges)
+library(dplyr)
+library(dfine)
+
+# 1. Set cohort factor levels in desired order
+desired_order <- rev(c(
+  "GSED-BGD",
+  "GSED-BRA",
+  "GSED-CHN",
+  "GSED-CIV",
+  "GSED-NLD",
+  "GSED-PAK",
+  "GSED-TZA",
+  "GCDG-CHN",
+  "GCDG-COL-LT42M",
+  "GCDG-COL-LT45M",
+  "GCDG-ETH",
+  "IYCD-BGD-ASQVAL"
+))
+
+result <- result %>%
+  mutate(
+    cohort = factor(cohort, levels = desired_order),
+    age_group = droplevels(age_group) # optional cleanup
+  ) %>%
+  filter(!is.na(age_group)) # 3. Remove NA age_group
+
+# Compute group means for daz per cohort and age_group
+means_df <- result %>%
+  group_by(age_group, cohort) %>%
+  summarise(mean_daz = mean(daz, na.rm = TRUE), .groups = "drop")
+
+# 2. Use gsed palette from dfine
+palette_study <- dfine::gsed_palettes$study
+palette_used <- palette_study[names(palette_study) %in% desired_order]
+
+# Final plot
+boxplots <- ggplot(result, aes(x = daz, y = cohort, fill = cohort)) +
+  theme_light() +
+  # geom_density_ridges(scale = 1.2, alpha = 0.7, color = "white") +
+  scale_x_continuous(
+    limits = c(-3.5, 3.5),
+    breaks = seq(-3, 3, by = 1),
+    minor_breaks = NULL,
+    expand = c(0, 0)
+  ) +
+  geom_vline(
+    xintercept = 0,
+    color = "steelblue",
+    linewidth = 0.2,
+    linetype = "dashed"
+  ) +
+  geom_boxplot(
+    box.linewidth = 0,
+    outlier.size = 0.1,
+    median.linewidth = 0.1,
+    whisker.linewidth = 0.1,
+    alpha = 0.7,
+    width = 0.6
+  ) +
+  scale_fill_manual(values = palette_used) +
+  facet_wrap(~age_group) +
+  xlab("BSID-III DAZ") +
+  ylab("Cohort") +
+  guides(fill = "none")
+
+# Save as PDF
+ggsave(
+  "boxplot-bsid.pdf",
+  boxplots,
+  width = 12,
+  height = 6,
+  units = "in"
+)
+
+# Save as PNG
+ggsave(
+  "boxplot-bsid.png",
+  boxplots,
+  width = 12,
+  height = 6,
   units = "in",
   dpi = 300
 )

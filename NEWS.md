@@ -1,4 +1,5 @@
-- Adds some additional analyses for reporting to `by_extension_3.R`
+- Adds additional analyses for reporting to `by_extension_3.R`
+- Adds code for boxplots and violin plots for all cohorts that collected BSID-III data
 
 # gsedscripts 0.27.1
 
