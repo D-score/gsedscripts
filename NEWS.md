@@ -1,3 +1,5 @@
+# gsedscripts 0.27.2
+
 - Adds additional analyses for reporting to `by_extension_3.R`
 - Adds code for boxplots and violin plots for all cohorts that collected BSID-III data
 
