@@ -1133,6 +1133,17 @@ means_df <- result %>%
 palette_study <- dfine::gsed_palettes$study
 palette_used <- palette_study[names(palette_study) %in% desired_order]
 
+result <- result |>
+  dplyr::mutate(
+    age_group = dplyr::recode(
+      age_group,
+      "0-1" = "0–11 mo",
+      "1-2" = "12–23 mo",
+      "2-3" = "24–35 mo"
+    )
+  )
+
+
 # Final plot
 boxplots <- ggplot(result, aes(x = daz, y = cohort, fill = cohort)) +
   theme_light() +
