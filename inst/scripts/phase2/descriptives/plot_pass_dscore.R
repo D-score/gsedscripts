@@ -1,5 +1,5 @@
 # This script plots the proportion pass by dscore for all items of the
-# 1) GSED SF and LF, phase 1 & 2.
+# GSED SF and LF, phase 1 & 2.
 #
 # The premier technical difficulty compared to plot_pass_age.R is the
 # calculation of the D-score. This script makes the following
@@ -10,12 +10,12 @@
 #    These are key = "gsed2406" and population = "preliminary_standards".
 #
 # Local dependencies:
-# + Environmental variable "GSED_PHASE2" must be set to your local
+#   Environmental variable "GSED_PHASE2" must be set to your local
 #   working directory for PHASE 2
-# + {GSED_PHASE2}/data/fixed.duckdb must contain the fixed form item data
+#   {GSED_PHASE2}/data/fixed.duckdb must contain the fixed form item data
 #
 # Created   20250630 SvB
-# Modified  20250721 SvB
+# Modified  20251003 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
   stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
@@ -35,8 +35,12 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
-if (packageVersion("dscore") < "1.10.4") stop("Needs dscore 1.10.4")
+if (packageVersion("dfine") < "0.13.0") {
+  stop("Needs dfine 0.13.0")
+}
+if (packageVersion("dscore") < "2.0.0") {
+  stop("Needs dscore 2.0.0")
+}
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
@@ -59,7 +63,8 @@ visits <- visits |>
 responses <- semi_join(
   responses,
   visits,
-  by = c("subjid", "agedays", "vist_type"))
+  by = c("subjid", "agedays", "vist_type")
+)
 
 #
 # C. Add country and cohort to responses from visits
@@ -70,7 +75,8 @@ responses <- responses |>
     visits |>
       distinct(cohort, subjid, agedays, vist_type) |>
       mutate(country = substr(cohort, 6, 8)),
-    by = c("subjid", "agedays", "vist_type")) |>
+    by = c("subjid", "agedays", "vist_type")
+  ) |>
   select(cohort, country, subjid, agedays, vist_type, item, response)
 
 #
@@ -84,10 +90,18 @@ responses <- responses |>
 # - in each of these we need to find and remove one record
 # - restore agedays where possible
 responses <- responses |>
-  filter(!(subjid %in% c("076-GSED-0528", "076-GSED-0905", "076-GSED-0905",
-                         "076-GSED-1322",
-                         "384-GSED-1160", "384-GSED-1323",
-                         "528-GSED-0581"))) |>
+  filter(
+    !(subjid %in%
+      c(
+        "076-GSED-0528",
+        "076-GSED-0905",
+        "076-GSED-0905",
+        "076-GSED-1322",
+        "384-GSED-1160",
+        "384-GSED-1323",
+        "528-GSED-0581"
+      ))
+  ) |>
   filter(!is.na(agedays))
 
 visits <- visits |>
@@ -116,8 +130,9 @@ pairs <- sf_rows |>
   mutate(pair = ifelse(diff > 4L | is.na(diff), -sf_order, sf_order))
 
 # Merge pair number with with response
-items_sf <- get_itemnames(ins = "sf_", order = "indm")
-items_lf <- get_itemnames(ins = c("lfa", "lfb", "lfc"))
+items_sf <- get_itemnames(ins = "gs1", order = "indm")
+items_lf <- get_itemnames(ins = "gl1")
+items_lf <- items_lf[c(55:155, 1:54)]
 items_bsid <- get_itemnames(ins = "by3")
 
 responses <- responses |>
@@ -129,27 +144,31 @@ responses_sf <- responses |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 responses_lf <- responses |>
   filter(item %in% items_lf) |>
-  left_join(pairs |> filter(pair > 0),
-            by = join_by(subjid, agedays == lf_agedays)) |>
-  mutate(pair = ifelse(is.na(pair), -agedays, pair),
-         ins = "lf") |>
+  left_join(
+    pairs |> filter(pair > 0),
+    by = join_by(subjid, agedays == lf_agedays)
+  ) |>
+  mutate(pair = ifelse(is.na(pair), -agedays, pair), ins = "lf") |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 responses_bsid <- responses |>
   filter(item %in% items_bsid) |>
-  mutate(pair = NA_integer_,
-         ins = "bsid") |>
+  mutate(pair = NA_integer_, ins = "bsid") |>
   select(cohort, country, subjid, agedays, pair, ins, item, response)
 
 # Check for zero duplicate matches
-nrow(responses_sf) + nrow(responses_lf) + nrow(responses_bsid) - nrow(responses) == 0
+nrow(responses_sf) +
+  nrow(responses_lf) +
+  nrow(responses_bsid) -
+  nrow(responses) ==
+  0
 
 # Recreate with the new pair number
 responses <- bind_rows(responses_sf, responses_lf, responses_bsid)
 
 # tail(table(responses$pair, useNA = "al"), 8)
 #
-# -17     -6     -2     -1      1      2      3   <NA>
-#  27     21   2018   7583 689313 162964   8615  96203
+#   -17     -6     -2     -1      1      2      3   <NA>
+#    27     21   2018   7583 691786 163347   8613  94286
 #
 # < -5: no match for LF
 # -2, -1: no match for SF
@@ -164,13 +183,16 @@ responses <- responses |>
 #
 
 min_n <- 10
-items_sflf <- c(get_itemnames(ins = "sf_", order = "indm"),
-                get_itemnames(ins = c("lfa", "lfb", "lfc")))
+items_sflf <- c(items_sf, items_lf)
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items_sflf <- intersect(items_sflf, valid_items)
@@ -180,9 +202,8 @@ responses1 <- responses |>
 # For SF & LF Phase 1&2
 #
 # > table(responses1$country)
-#    BGD    BRA    CHN    CIV    NLD    PAK    TZA
-# 159171 139600  84809 105375  42399 180702 164277
-
+#     BGD    BRA    CHN    CIV    NLD    PAK    TZA
+#  159754 139995  85218 105777  42607 181108 164769
 #
 #  E2. Select BSID items with at least 3 observations in both categories
 #
@@ -192,8 +213,12 @@ items_bsid <- get_itemnames(ins = "by3")
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items_bsid <- intersect(items_bsid, valid_items)
@@ -216,8 +241,11 @@ responses <- bind_rows(responses1, responses2)
 
 data <- responses1 |>
   select(subjid, pair, item, response) |>
-  pivot_wider(names_from = c(item), values_from = response,
-              id_cols = c(subjid, pair)) |>
+  pivot_wider(
+    names_from = c(item),
+    values_from = response,
+    id_cols = c(subjid, pair)
+  ) |>
   arrange(subjid, pair)
 
 # duplicates
@@ -227,11 +255,14 @@ data <- responses1 |>
 
 agedays_info <- responses1 |>
   distinct(subjid, pair, ins, agedays) |>
-  pivot_wider(names_from = ins, values_from = agedays,
-              names_prefix = "agedays_")
+  pivot_wider(
+    names_from = ins,
+    values_from = agedays,
+    names_prefix = "agedays_"
+  )
 data <- data |>
   left_join(agedays_info, by = c("subjid", "pair")) |>
-  mutate(agedays = rowMeans(across(c(agedays_sf, agedays_lf)), na.rm = TRUE)) |>
+  mutate(agedays = rowMeans(across(c(agedays_sf, agedays_sf)), na.rm = TRUE)) |>
   select(subjid, pair, agedays, any_of(items_sf), any_of(items_lf))
 
 cat("dim(data):", dim(data), "\n")
@@ -243,13 +274,41 @@ cat("dim(data):", dim(data), "\n")
 #      using the gsed2406 key and preliminary_standards population
 #
 
-colnames(data) <- dscore::rename_vector(colnames(data), lexin = "gsed4", lexout = "gsed3")
-items_sflf <- rename_vector(items_sflf, lexin = "gsed4", lexout = "gsed3")
-ds <- dscore(data = data, items = items_sflf,
-             xname = "agedays", xunit = "days",
-             key = "gsed2406", population = "preliminary_standards",
-             metric = "dscore")
+ds2406 <- dscore(
+  data = data,
+  items = items_sflf,
+  xname = "agedays",
+  xunit = "days",
+  key = "gsed2406",
+  population = "preliminary_standards",
+  metric = "dscore"
+)
 
+ds2510 <- dscore(
+  data = data,
+  items = items_sflf,
+  xname = "agedays",
+  xunit = "days",
+  key = "gsed2510",
+  population = "preliminary_standards",
+  metric = "dscore"
+)
+
+ds_keys <- bind_cols(
+  rename(ds2406, d2406 = d, daz2406 = daz, sem2406 = sem) |>
+    select(a, n, p, d2406, daz2406, sem2406),
+  rename(ds2510, d2510 = d, daz2510 = daz, sem2510 = sem) |>
+    select(d2510, daz2510, sem2510)
+)
+ds_keys <- ds_keys |>
+  mutate(
+    ddif = d2510 - d2406,
+    dazdif = daz2510 - daz2406,
+    dazmean = (daz2510 + daz2406) / 2,
+    semdif = sem2510 - sem2406
+  )
+
+ds <- ds2510
 ds_sflf <- bind_cols(select(data, subjid, pair, agedays), ds) |>
   mutate(ins = "sflf")
 
@@ -260,13 +319,21 @@ ds_sflf <- bind_cols(select(data, subjid, pair, agedays), ds) |>
 
 data_bsid <- responses2 |>
   select(subjid, pair, agedays, ins, item, response) |>
-  pivot_wider(names_from = c(item), values_from = response,
-              id_cols = c(subjid, pair, agedays, ins)) |>
+  pivot_wider(
+    names_from = c(item),
+    values_from = response,
+    id_cols = c(subjid, pair, agedays, ins)
+  ) |>
   arrange(subjid, agedays)
-ds <- dscore(data = data_bsid, items = items_bsid,
-             xname = "agedays", xunit = "days",
-             key = "gsed2406", population = "preliminary_standards",
-             metric = "dscore")
+ds <- dscore(
+  data = data_bsid,
+  items = items_bsid,
+  xname = "agedays",
+  xunit = "days",
+  key = "gsed2406",
+  population = "preliminary_standards",
+  metric = "dscore"
+)
 ds_bsid <- bind_cols(select(data_bsid, subjid, pair, agedays, ins), ds)
 
 # NOTE: D-score from BSID cannot be calculated for very young children
@@ -280,8 +347,7 @@ data <- bind_rows(ds_sflf, ds_bsid)
 #
 
 responses <- responses |>
-  left_join(data |> select(subjid, pair, d),
-            by = c("subjid", "pair")) |>
+  left_join(data |> select(subjid, pair, d), by = c("subjid", "pair")) |>
   mutate(d = ifelse(is.na(d), NA_real_, d))
 
 #
@@ -319,9 +385,9 @@ plots_sf <- dfine::plot_pass(
   data_rug = data_rug,
   items = items_sf,
   x_var = "d",
-  model_name = "gsed2406",
   label_trunc = 80,
-  col_manual = get_palette("cohort"))
+  col_manual = get_palette("cohort")
+)
 
 # LF
 plots_lf <- dfine::plot_pass(
@@ -329,9 +395,9 @@ plots_lf <- dfine::plot_pass(
   data_rug = data_rug,
   items = items_lf,
   x_var = "d",
-  model_name = "Key: gsed2406",
   label_trunc = 80,
-  col_manual = get_palette("cohort"))
+  col_manual = get_palette("cohort")
+)
 
 # BSID
 plots_bsid <- dfine::plot_pass(
@@ -339,10 +405,108 @@ plots_bsid <- dfine::plot_pass(
   data_rug = data_rug,
   items = items_bsid,
   x_var = "d",
-  model_name = "Key: gsed2406",
   label_trunc = 80,
   col_manual = get_palette("cohort"),
-  min_n = 5)
+  min_n = 5
+)
+
+plot_dd <- ggplot2::ggplot(
+  data = ds_keys,
+  mapping = aes(x = d2406, y = d2510)
+) +
+  scale_x_continuous(limits = c(0, 80)) +
+  scale_y_continuous(limits = c(0, 80)) +
+  coord_cartesian(ratio = 1) +
+  labs(
+    x = "D-score (gsed2406)",
+    y = "D-score (gsed2510)"
+  ) +
+  geom_abline(slope = 1, colour = "grey", linewidth = 0.4) +
+  geom_point(size = 0.1)
+plot_dd
+
+plot_ddif <- ggplot2::ggplot(
+  data = ds_keys,
+  mapping = aes(x = d2406, y = ddif)
+) +
+  scale_x_continuous(limits = c(0, 80)) +
+  scale_y_continuous(limits = c(-3, 3)) +
+  labs(
+    x = "D-score (gsed2406)",
+    y = "D-score (gsed2510) - D-score (gsed2406)"
+  ) +
+  geom_hline(yintercept = 0, colour = "grey", linewidth = 0.4) +
+  geom_point(size = 0.1)
+plot_ddif
+
+plot_daz <- ggplot2::ggplot(
+  data = ds_keys,
+  mapping = aes(x = daz2406, y = daz2510)
+) +
+  scale_x_continuous(limits = c(-3, 3)) +
+  scale_y_continuous(limits = c(-3, 3)) +
+  coord_cartesian(ratio = 1) +
+  labs(
+    x = "DAZ (gsed2406)",
+    y = "DAZ (gsed2510)"
+  ) +
+  geom_abline(slope = 1, colour = "grey", linewidth = 0.4) +
+  geom_point(size = 0.1)
+plot_daz
+
+# Calculate Bland–Altman statistics
+bias <- mean(ds_keys$dazdif, na.rm = TRUE)
+sd_diff <- sd(ds_keys$dazdif, na.rm = TRUE)
+
+loa_upper <- bias + 1.96 * sd_diff
+loa_lower <- bias - 1.96 * sd_diff
+
+plot_dazagree <- ggplot2::ggplot(
+  data = ds_keys,
+  mapping = aes(x = dazmean, y = dazdif)
+) +
+  scale_x_continuous(limits = c(-3, 3)) +
+  scale_y_continuous(limits = c(-0.7, 0.7)) +
+  labs(
+    x = "(DAZ (gsed2510) + DAZ (gsed2406)) / 2",
+    y = "DAZ (gsed2510) - DAZ (gsed2406)"
+  ) +
+  geom_hline(yintercept = 0, colour = "grey", linewidth = 0.4) +
+  geom_hline(yintercept = bias, colour = "blue", linewidth = 0.4) +
+  geom_hline(yintercept = loa_upper, linetype = "dashed", colour = "red") +
+  geom_hline(yintercept = loa_lower, linetype = "dashed", colour = "red") +
+  geom_point(size = 0.1)
+plot_dazagree
+
+plot_sem <- ggplot2::ggplot(
+  data = ds_keys,
+  mapping = aes(x = sem2406, y = sem2510)
+) +
+  scale_x_continuous(limits = c(0.8, 2.5)) +
+  scale_y_continuous(limits = c(0.8, 2.5)) +
+  coord_cartesian(ratio = 1) +
+  labs(
+    x = "SEM (gsed2406)",
+    y = "SEM (gsed2510)"
+  ) +
+  geom_abline(slope = 1, colour = "grey", linewidth = 0.4) +
+  geom_point(size = 0.1)
+plot_sem
+
+plot_semdif <- ggplot2::ggplot(
+  data = ds_keys,
+  mapping = aes(x = sem2406, y = semdif)
+) +
+  scale_x_continuous(limits = c(0.8, 2.5)) +
+  scale_y_continuous(limits = c(-0.3, 0.3)) +
+  coord_cartesian(ratio = 1) +
+  labs(
+    x = "SEM (gsed2406)",
+    y = "SEM (gsed2510) - SEM(gsed2406)"
+  ) +
+  geom_hline(yintercept = 0, colour = "grey", linewidth = 0.4) +
+  geom_point(size = 0.1)
+plot_semdif
 
 #
 # F.  Save plots as PDF
@@ -376,6 +540,20 @@ if (!is.null(file) & device == "pdf") {
   message("Saved to: ", file)
   dev.off()
 }
+
+# Key comparison
+library(patchwork)
+# Combine the four plots in a 2x2 grid
+compare_plot <- (plot_dd + labs(tag = "A") | plot_ddif + labs(tag = "B")) /
+  (plot_daz + labs(tag = "C") | plot_sem + labs(tag = "D"))
+# Make tags appear automatically
+compare_plot <- compare_plot &
+  theme(plot.tag = element_text(face = "bold", size = 14))
+
+# Save to PDF
+file <- file.path(path, "key_compare.pdf")
+ggsave(file, compare_plot, width = 10, height = 10)
+
 
 # Plot D-score against age in months
 

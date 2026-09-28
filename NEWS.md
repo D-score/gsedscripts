@@ -1,3 +1,27 @@
+# gsedscripts 0.27.2
+
+- Adds additional analyses for reporting to `by_extension_3.R`
+- Adds code for boxplots and violin plots for all cohorts that collected BSID-III data
+
+# gsedscripts 0.27.1
+
+- Adds `by_extension_3.R` and `contourplot_by3.R` scripts to support the `by3` extension procedure for key `gsed2510`
+- Adds diagnostic info from fitting key `gsed2510`
+- Reformats to conform to aiR standards
+
+# gsedscripts 0.27.0
+
+- Major update to create new key `gsed2510`. 
+- Updates all scripts to use the `gs1` and `gl1` instrument codes for GSED SF and LF, respectively 
+- Adapts scripts to gsed3 lexicon
+- Moves `calculate_DIF_classification()` and `calculate_DIF_table()` from gsedscripts (0.27.0) to dfine package (0.13.0)
+- Moves `build_database_fixed.R` from `gsedread` to `gsedscripts` package
+
+# gsedscripts 0.26.0
+
+- Add some improvements to scripts
+- Prepare for reproducibility
+
 # gsedscripts 0.25.0
 
 - Adds reporting outline `Rmd/coremodel_aug25.Rmd` to document the reporting process for the GSED key

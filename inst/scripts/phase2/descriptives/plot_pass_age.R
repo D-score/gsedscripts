@@ -3,11 +3,11 @@
 # 2) BSID, phase 1.
 #
 # Dependencies:
-# + Environmental variable "GSED_PHASE2" must be set to the directory
+#   Environmental variable "GSED_PHASE2" must be set to the directory
 #   containing database "data/fixed.duckdb" containing fixed administration data
 #
 # Created   20250630 SvB
-# Modified  20250721 SvB
+# Modified  20251001 SvB
 
 if (nchar(Sys.getenv("GSED_PHASE2")) == 0L) {
   stop("Environmental variable GSED_PHASE2 not set.", call. = FALSE)
@@ -27,8 +27,12 @@ library("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
 library("dfine")
 library("dscore")
 
-if (packageVersion("dfine") < "0.10.0") stop("Needs dfine 0.10.0")
-if (packageVersion("dscore") < "1.10.4") stop("Needs dscore 1.10.4")
+if (packageVersion("dfine") < "0.13.0") {
+  stop("Needs dfine 0.13.0")
+}
+if (packageVersion("dscore") < "1.11.1") {
+  stop("Needs dscore 1.11.1")
+}
 
 #
 #  A.  Read fixed form Phase 1&2 data responses and visits
@@ -50,7 +54,8 @@ responses <- responses |>
     visits |>
       distinct(cohort, subjid, agedays, vist_type) |>
       mutate(country = substr(cohort, 6, 8)),
-    by = c("subjid", "agedays", "vist_type")) |>
+    by = c("subjid", "agedays", "vist_type")
+  ) |>
   select(cohort, country, subjid, agedays, vist_type, item, response)
 
 #
@@ -58,13 +63,18 @@ responses <- responses |>
 #
 
 min_n <- 10
-items_sf <-get_itemnames(ins = "sf_", order = "indm")
-items_lf <- get_itemnames(instrument = c("lfa", "lfb", "lfc"))
+items_sf <- get_itemnames(ins = "gs1", order = "indm")
+items_lf <- get_itemnames(ins = "gl1")
+items_lf <- items_lf[c(55:155, 1:54)]
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items1 <- intersect(c(items_sf, items_lf), valid_items)
@@ -74,15 +84,15 @@ responses1 <- responses |>
 # For SF & LF Phase 1&2
 # table(responses1$vist_type, responses1$country)
 #
-#       BGD    BRA    CHN    CIV    NLD    PAK    TZA
-# 1   56967 116873  68482  50161  16770  63931  60760
-# 2   47162     83   7452  46277      0  53342  49240
-# 4       0      0      0      0  18600      0      0
-# 5    8407   6147   6331   6961    583   8335   8618
-# 6    4331   4188   3140   3833   4027   5140   4896
-# 7    6915    101   5779   5363   1188  11001   7341
-# 8   43695  19074      0      0   1969  39592  41707
-# 12    101      0      0      0      0   7696    333
+#         BGD    BRA    CHN    CIV    NLD    PAK    TZA
+#  1   56967 117228  68766  50210  16770  63930  60760
+#  2   47568     83   7528  46584      0  53650  49604
+#  4       0      0      0      0  18779      0      0
+#  5    8435   6163   6353   6976    588   8350   8636
+#  6    4346   4200   3150   3843   4049   5150   4904
+#  7    6951    101   5818   5397   1198  11024   7377
+#  8   43821  19105      0      0   1971  39658  41791
+#  12    101      0      0      0      0   7696    333
 
 #
 #  C2. Select BSID items with at least 3 observations in both categories
@@ -93,8 +103,12 @@ items_bsid <- get_itemnames(ins = "by3")
 valid_items <- responses |>
   filter(response %in% c(0, 1)) |>
   count(item, response) |>
-  pivot_wider(names_from = response, values_from = n,
-              names_prefix = "n_", values_fill = 0) |>
+  pivot_wider(
+    names_from = response,
+    values_from = n,
+    names_prefix = "n_",
+    values_fill = 0
+  ) |>
   filter(n_0 >= min_n, n_1 >= min_n) |>
   pull(item)
 items2 <- intersect(items_bsid, valid_items)
@@ -153,7 +167,8 @@ plots_sf <- plot_pass(
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
   label_trunc = 80,
-  col_manual = col_manual)
+  col_manual = col_manual
+)
 
 # LF
 plots_lf <- plot_pass(
@@ -163,7 +178,8 @@ plots_lf <- plot_pass(
   xlim = c(0, 48),
   xbreaks = seq(0, 48, 6),
   label_trunc = 80,
-  col_manual = col_manual)
+  col_manual = col_manual
+)
 
 # BSID
 plots_bsid <- plot_pass(
@@ -174,7 +190,8 @@ plots_bsid <- plot_pass(
   xbreaks = seq(0, 48, 6),
   label_trunc = 80,
   col_manual = col_manual,
-  min_n = 3)
+  min_n = 3
+)
 
 #
 # F.  Save plots as PDF
@@ -209,4 +226,3 @@ if (!is.null(file) & device == "pdf") {
   message("Saved to: ", file)
   dev.off()
 }
-
